@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"runtime"
 	"sync"
-
-	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 type List struct {
