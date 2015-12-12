@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mxk/go-sqlite/sqlite3"
+	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 type ConnPool struct {
@@ -14,9 +14,9 @@ type ConnPool struct {
 }
 
 type Conn struct {
-	db                                     *sqlite3.Conn
-	indexCount, index, searchCount, search *sqlite3.Stmt
-	person, family                         *sqlite3.Stmt
+	db                                     *sql.Conn
+	indexCount, index, searchCount, search *sql.Stmt
+	person, family                         *sql.Stmt
 }
 
 func (l *Conn) Index(char string, perPage, page uint) (uint, []Row, error) {
@@ -27,7 +27,7 @@ func (l *Conn) Search(query string, perPage, page uint) (uint, []Row, error) {
 	return l.index(l.searchCount, l.search, char, perPage, page)
 }
 
-func (l *Conn) index(count, query *sqllit3.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
+func (l *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
 	var num uint
 	err := count.QueryRow(char).Scan(&num)
 	if err != nil {
@@ -130,7 +130,7 @@ func NewConnPool(databaseURL string) *ConnPool {
 					personTerms = "[id], [fname], [lname], [sex], IF([deathdate] = '', 0, 1) AS [isdead], [famc], [fams]"
 					familyTerms = "[husband], [wife], [children]"
 				)
-				db, _ := sqlite3.Open(databaseURL)
+				db, _ := sql.Open("sqlite3", databaseURL)
 				countIndex, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE [lname] LIKE CONCAT(?, '%');")
 				index, _ := db.Prepare("SELECT " + personTerms + " FROM [People] WHERE [lname] LIKE CONCAT(?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
 				countSearch, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%');")
