@@ -1,0 +1,81 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Jaki Woolnough's Family Tree</title>
+		<link rel="icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="shortcut icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" type="text/css" media="screen" title="Default Style" href="/FH/styles/2010/list.css" />
+		<!--[if IE]><style>body { behavior:url("/FH/styles/csshover.htc"); }</style><![endif]-->
+	</head>
+	<body>
+		<div id="site-header">
+			<h1>Jaki Woolnough's Family Tree</h1>
+		</div>
+		<div id="menu-container">
+			<ul id="menu">
+				<li>
+					<a href="/FH/index.html" title="Home" tabindex="1">Home</a>
+				</li>
+				<li>
+					<a href="/FH/memoirs.html" title="Memoirs" tabindex="2">Memoirs</a>
+				</li>
+				<li>
+					<a href="/FH/origins.html" title="Name Origins" tabindex="3">Name Origins</a>
+				</li>
+				<li>
+					<a href="/FH/photos.html" title="Photos &amp; Documents" tabindex="4">Photos &amp; Documents</a>
+				</li>
+				<li>
+					<a href="/FH/list.html" title="View the Family Tree" tabindex="5">View the Family Tree</a>
+				</li>
+				<li>
+					<a href="/FH/contact.html" title="Email Me" tabindex="6">Email Me</a>
+				</li>
+				<li>
+					<a href="/FH/acknowledgements.html" title="Acknowledgements" tabindex="7">Acknowledgements</a>
+				</li>
+			</ul>
+		</div>
+		<div id="contentblock">
+			<h2>Select a Name</h2>
+			<div id="letters"><a href="?letter=A">A</a>|<a href="?letter=B">B</a>|<a href="?letter=C">C</a>|<a href="?letter=D">D</a>|<a href="?letter=E">E</a>|<a href="?letter=F">F</a>|<a href="?letter=G">G</a>|<a href="?letter=H">H</a>|<a href="?letter=I">I</a>|<a href="?letter=J">J</a>|<a href="?letter=K">K</a>|<a href="?letter=L">L</a>|<a href="?letter=M">M</a>|<a href="?letter=N">N</a>|<a href="?letter=O">O</a>|<a href="?letter=P">P</a>|<a href="?letter=Q">Q</a>|<a href="?letter=R">R</a>|<a href="?letter=S">S</a>|<a href="?letter=T">T</a>|<a href="?letter=U">U</a>|<a href="?letter=V">V</a>|<a href="?letter=W">W</a>|<a href="?letter=X">X</a>|<a href="?letter=Y">Y</a>|<a href="?letter=Z">Z</a></div>
+			<form action="?" method="post">
+				<label for="search">Search Terms</label>
+				<input type="text" name="query" id="search" value="{{.Query}}" />
+				<input type="submit" value="Search" />
+			</form>
+			{{if .HasRows}}
+			{{.Pagination}}
+			<ul id="results">
+			{{range .Rows}}
+				<li class="result">
+					<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.LastName}}</a></div>
+					<div class="links">
+						{{range .Parents}}
+						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.LastName}}</a>({{if eq .Sex "F"}}Mother{{else if eq .Sex "M"}}Father{{else}}Parent{{end}})</div>
+						{{end}}
+						{{range .Spouses}}
+						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.LastName}}</a>({{if eq .Sex "F"}}Wife{{else if eq .Sex "M"}}Husband{{else}}Spouse{{end}})</div>
+						{{end}}
+						{{range .Siblings}}
+						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.LastName}}</a>({{if eq .Sex "F"}}Sister{{else if eq .Sex "M"}}Brother{{else}}Sibling{{end}})</div>
+						{{end}}
+						{{range .Children}}
+						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.LastName}}</a>({{if eq .Sex "F"}}Daughter{{else if eq .Sex "M"}}Son{{else}}Child{{end}})</div>
+						{{end}}
+					</div>
+				</li>
+			{{end}}
+			</ul>
+			{{.Pagination}}
+			{{else}}
+			<div>
+				<span>To find a person in the tree try either of the following: -</span>
+				<ol>
+					<li>Select a letter above to find all people with surnames starting with that letter.</li>
+					<li>Use the above search box to search for specific names.</li>
+				</ol>
+			</div>
+			{{end}}
+		</div>
+	</body>
+</html>
