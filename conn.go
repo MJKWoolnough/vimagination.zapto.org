@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 type ConnPool struct {
@@ -13,7 +15,7 @@ type ConnPool struct {
 }
 
 type Conn struct {
-	db                                     *sql.Conn
+	db                                     *sql.DB
 	indexCount, index, searchCount, search *sql.Stmt
 	person, family                         *sql.Stmt
 }
@@ -32,7 +34,7 @@ func (c *Conn) Person(id uint) (*Person, error) {
 		fams string
 		famc uint
 	)
-	err := c.person.QueryRow(id).Scan(&p.ID, &p.FirstName, &p.LastName, &p.Sex, &p.Dead, &fams, &famc)
+	err := c.person.QueryRow(id).Scan(&p.ID, &p.FirstName, &p.LastName, &p.Sex, &p.Dead, &famc, &fams)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +42,15 @@ func (c *Conn) Person(id uint) (*Person, error) {
 		mother, father uint
 		siblingsStr    string
 	)
-	err = c.family.QueryRow(famc).Scan(&father, &mother, &siblingsStr)
-	if err != nil {
-		return nil, err
+	if famc > 0 {
+		err = c.family.QueryRow(famc).Scan(&father, &mother, &siblingsStr)
+		if err != nil {
+			return nil, err
+		}
 	}
 	p.Parents = make([]uint, 0, 2)
 	p.Spouses = make([]uint, 0, 2)
-	p.Sibling = make([]uint, 0, 6)
+	p.Siblings = make([]uint, 0, 6)
 	p.Children = make([]uint, 0, 6)
 	if mother != 0 {
 		p.Parents = append(p.Parents, mother)
@@ -55,15 +59,21 @@ func (c *Conn) Person(id uint) (*Person, error) {
 		p.Parents = append(p.Parents, father)
 	}
 	for _, sid := range strings.Split(strings.TrimSpace(siblingsStr), " ") {
+		if sid == "" {
+			continue
+		}
 		pid, err := strconv.ParseUint(sid, 10, 0)
 		if err != nil {
 			return nil, err
 		}
-		if pid != id {
+		if uint(pid) != id {
 			p.Siblings = append(p.Siblings, uint(pid))
 		}
 	}
 	for _, fam := range strings.Split(strings.TrimSpace(fams), " ") {
+		if fam == "" {
+			continue
+		}
 		var (
 			husband, wife uint
 			childrenStr   string
@@ -80,7 +90,10 @@ func (c *Conn) Person(id uint) (*Person, error) {
 			p.Spouses = append(p.Spouses, husband)
 		}
 		for _, cid := range strings.Split(strings.TrimSpace(childrenStr), " ") {
-			kid, err := strconv.ParseUint(sid, 10, 0)
+			if cid == "" {
+				continue
+			}
+			kid, err := strconv.ParseUint(cid, 10, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -92,11 +105,11 @@ func (c *Conn) Person(id uint) (*Person, error) {
 }
 
 func (c *Conn) Index(char string, perPage, page uint) (uint, []Row, error) {
-	return c.index(l.listCount, l.list, char, perPage, page)
+	return c.getIndex(c.indexCount, c.index, char, perPage, page)
 }
 
 func (c *Conn) Search(query string, perPage, page uint) (uint, []Row, error) {
-	return c.index(l.searchCount, l.search, char, perPage, page)
+	return c.getIndex(c.searchCount, c.search, query, perPage, page)
 }
 
 type PersonCache struct {
@@ -106,23 +119,24 @@ type PersonCache struct {
 
 func (pc *PersonCache) Get(ids ...uint) ([]*Person, error) {
 	toRet := make([]*Person, len(ids))
+	var err error
 	for n, pid := range ids {
 		p, ok := pc.cache[pid]
 		if !ok {
-			p, err = pc.c.Person(id)
+			p, err = pc.c.Person(pid)
 			if err != nil {
 				return nil, err
 			}
-			pc.cache[id] = p
+			pc.cache[pid] = p
 		}
 		toRet[n] = p
 	}
 	return toRet, nil
 }
 
-func (c *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
+func (c *Conn) getIndex(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
 	var num uint
-	err := count.QueryRow(char).Scan(&num)
+	err := count.QueryRow(queryStr).Scan(&num)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -176,7 +190,7 @@ func (c *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint
 		}
 
 		r := Row{
-			Person:   p,
+			Person:   p[0],
 			Parents:  parents,
 			Siblings: siblings,
 			Spouses:  spouses,
@@ -199,17 +213,17 @@ func NewConnPool(databaseURL string) *ConnPool {
 		Pool: sync.Pool{
 			New: func() interface{} {
 				db, _ := sql.Open("sqlite3", databaseURL)
-				countIndex, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE [lname] LIKE CONCAT(?, '%');")
-				index, _ := db.Prepare("SELECT [id] FROM [People] WHERE [lname] LIKE CONCAT(?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
-				countSearch, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%');")
-				search, _ := db.Prepare("SELECT [id] FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
-				person, _ := db.Prepare("SELECT [id], [fname], [lname], [sex], IF([deathdate] = '', 0, 1) AS [isdead], [famc], [fams] FROM [People] WHERE [id] = ?;")
-				family, _ := db.Prepare("SELECT [husband], [wife], [children] FROM [People] WHERE [id] = ?;")
+				countIndex, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE [lname] LIKE ? || '%';")
+				index, _ := db.Prepare("SELECT [id] FROM [People] WHERE [lname] LIKE ? || '%' ORDER BY [fname] ASC, [lname] ASC LIMIT ? OFFSET ?;")
+				countSearch, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE [fname] || ' ' || [lname] LIKE '%' ||  ? || '%';")
+				search, _ := db.Prepare("SELECT [id] FROM [People] WHERE [fname] || ' ' || [lname] LIKE '%' || ? || '%' ORDER BY [fname] ASC, [lname] ASC LIMIT ? OFFSET ?;")
+				person, _ := db.Prepare("SELECT [id], [fname], [lname], [sex], CASE [deathdate] WHEN '' THEN 0 ELSE 1 END AS [isdead], [famc], [fams] FROM [People] WHERE [id] = ?;")
+				family, _ := db.Prepare("SELECT [husband], [wife], [children] FROM [Fams] WHERE [id] = ?;")
 				l := &Conn{
 					db:          db,
-					countIndex:  countIndex,
+					indexCount:  countIndex,
 					index:       index,
-					countSearch: countSearch,
+					searchCount: countSearch,
 					search:      search,
 					person:      person,
 					family:      family,
@@ -222,8 +236,8 @@ func NewConnPool(databaseURL string) *ConnPool {
 }
 
 func closeConn(l *Conn) {
-	l.listCount.Close()
-	l.list.Close()
+	l.indexCount.Close()
+	l.index.Close()
 	l.searchCount.Close()
 	l.search.Close()
 	l.person.Close()
