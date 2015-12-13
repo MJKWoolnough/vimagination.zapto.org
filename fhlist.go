@@ -14,7 +14,7 @@ type Letter struct {
 
 func (l Letter) Parse(d []string) error {
 	if len(d[0]) == 1 {
-		for i := 'A'; i <= 'Z'; i++ {
+		for i := byte('A'); i <= 'Z'; i++ {
 			if d[0][0] == i {
 				*l.data = d[0]
 				break
@@ -40,42 +40,53 @@ func (i *IndexVars) ParserList() form.ParserList {
 
 type List struct {
 	Template *template.Template
-	Conn     *Conn
+	Pool     *ConnPool
 }
 
 func (l *List) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	const perPage = 10
-	lc := l.Pool.Get().(*ListConn)
+	lc := l.Pool.Get().(*Conn)
 	defer l.Pool.Put(lc)
 	var index IndexVars
-	form.Parse(&l, r.Form)
+	r.ParseForm()
+	form.Parse(&index, r.Form)
+	if index.Page == 0 {
+		index.Page = 1
+	}
 	var (
-		rows       []Row
-		totalPages uint
+		rows    []Row
+		num     uint
+		urlBase string
 	)
 	if index.Query != "" {
 		index.Letter = ""
 		var err error
-		rows, err = l.Conn.Search(index.Query, perPage, index.Page)
+		num, rows, err = lc.Search(index.Query, perPage, index.Page-1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		urlBase = "?query=" + template.HTMLEscapeString(index.Query) + "&amp;page="
 	} else if index.Letter != "" {
 		var err error
-		rows, err = l.Conn.Index(index.Letter, perPage, index.Page)
+		num, rows, err = lc.Index(index.Letter, perPage, index.Page-1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		urlBase = "?letter=" + index.Letter + "&amp;page="
 	}
-
+	totalPages := num / perPage
 	tv := struct {
 		IndexVars
+		HasRows    bool
 		Rows       []Row
 		Pagination template.HTML
 	}{
 		index,
+		len(rows) > 0,
 		rows,
-		template.HTML(pagination.New().Get(index.Page, totalPages).HTML()),
+		template.HTML(pagination.New().Get(index.Page-1, totalPages).HTML(urlBase)),
 	}
 
 	l.Template.Execute(w, tv)
