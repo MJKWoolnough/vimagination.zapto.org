@@ -48,7 +48,7 @@ func (l *List) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lc := l.Pool.Get().(*ListConn)
 	defer l.Pool.Put(lc)
 	var index IndexVars
-	form.Parse(&l, r.URL)
+	form.Parse(&l, r.Form)
 	var (
 		rows       []Row
 		totalPages uint
