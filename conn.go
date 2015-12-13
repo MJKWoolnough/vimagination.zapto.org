@@ -1,12 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
-
-	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 type ConnPool struct {
@@ -19,15 +18,88 @@ type Conn struct {
 	person, family                         *sql.Stmt
 }
 
-func (l *Conn) Index(char string, perPage, page uint) (uint, []Row, error) {
-	return l.index(l.listCount, l.list, char, perPage, page)
+type Person struct {
+	ID                                   uint
+	FirstName, LastName                  string
+	Sex                                  string
+	Dead                                 bool
+	Parents, Spouses, Siblings, Children []uint
 }
 
-func (l *Conn) Search(query string, perPage, page uint) (uint, []Row, error) {
-	return l.index(l.searchCount, l.search, char, perPage, page)
+func (c *Conn) Person(id uint) (*Person, error) {
+	var (
+		p    = new(Person)
+		fams string
+		famc uint
+	)
+	err := c.person.QueryRow(id).Scan(&p.ID, &p.FirstName, &p.LastName, &p.Sex, &p.Dead, &fams, &famc)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		mother, father uint
+		siblingsStr    string
+	)
+	err = c.family.QueryRow(famc).Scan(&father, &mother, &siblingsStr)
+	if err != nil {
+		return nil, err
+	}
+	p.Parents = make([]uint, 0, 2)
+	p.Spouses = make([]uint, 0, 2)
+	p.Sibling = make([]uint, 0, 6)
+	p.Children = make([]uint, 0, 6)
+	if mother != 0 {
+		p.Parents = append(p.Parents, mother)
+	}
+	if father != 0 {
+		p.Parents = append(p.Parents, father)
+	}
+	for _, sid := range strings.Split(strings.TrimSpace(siblingsStr), " ") {
+		pid, err := strconv.ParseUint(sid, 10, 0)
+		if err != nil {
+			return nil, err
+		}
+		if pid != id {
+			p.Siblings = append(p.Siblings, uint(pid))
+		}
+	}
+	for _, fam := range strings.Split(strings.TrimSpace(fams), " ") {
+		var (
+			husband, wife uint
+			childrenStr   string
+		)
+		fid, err := strconv.ParseUint(fam, 10, 0)
+		if err != nil {
+			return nil, err
+		}
+		err = c.family.QueryRow(fid).Scan(&husband, &wife, &childrenStr)
+		if wife != 0 && wife != id {
+			p.Spouses = append(p.Spouses, wife)
+		}
+		if husband != 0 && husband != id {
+			p.Spouses = append(p.Spouses, husband)
+		}
+		for _, cid := range strings.Split(strings.TrimSpace(childrenStr), " ") {
+			kid, err := strconv.ParseUint(sid, 10, 0)
+			if err != nil {
+				return nil, err
+			}
+			p.Children = append(p.Children, uint(kid))
+		}
+	}
+
+	return p, nil
 }
 
-func (l *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
+func (c *Conn) Index(char string, perPage, page uint) (uint, []Row, error) {
+	return c.index(l.listCount, l.list, char, perPage, page)
+}
+
+func (c *Conn) Search(query string, perPage, page uint) (uint, []Row, error) {
+	return c.index(l.searchCount, l.search, char, perPage, page)
+}
+
+func (c *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
 	var num uint
 	err := count.QueryRow(char).Scan(&num)
 	if err != nil {
@@ -41,102 +113,108 @@ func (l *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint
 		return 0, nil, err
 	}
 
-	result := make([]Row, 0, perPage)
-	cache := make(map[uint]*Person)
-
-	getPerson := func(id uint) (*Person, error) {
-		if p, ok := cache[id]; ok {
-			return p, nil
-		}
-		var fams string
-		p := new(Person)
-		err := l.person.QueryRow.Scan(&p.ID, &p.FirstName, &p.LastName, &p.Sex, &p.Dead, &p.Famc, &fams)
-		if err != nil {
-			return nil, err
-		}
-		for _, fam := range strings.Split(strings.TrimSpace(fams), " ") {
-			id, err := strconv.ParseUint(fam, 10, 0)
-			if err != nil {
-				return 0, nil, err
-			}
-			p.Fams = append(p.Fams, uint(id))
-		}
-		cache[id] = p
-		return p, nil
-	}
+	ids := make([]uint, 0, perPage)
 
 	for rows.Next() {
-		var fams string
-		p := new(Person)
-		err := rows.Scan(&p.ID, &p.FirstName, &p.LastName, &p.Sex, &p.Dead, &p.Famc, &fams)
+		var id uint
+		err := rows.Scan(&id)
 		if err != nil {
 			return 0, nil, err
 		}
-		for _, fam := range strings.Split(strings.TrimSpace(fams), " ") {
-			id, err := strconv.ParseUint(fam, 10, 0)
+		ids = append(ids, id)
+	}
+	rows.Close()
+
+	results := make([]Row, 0, len(ids))
+	cache := make(map[uint]*Person)
+
+	for _, id := range ids {
+		p, ok := cache[id]
+		if !ok {
+			p, err = c.Person(id)
 			if err != nil {
 				return 0, nil, err
 			}
-			p.Fams = append(p.Fams, uint(id))
+			cache[id] = p
 		}
-		result = append(result, p)
-	}
-	if err := rows.Err(); err != nil {
-		return 0, nil, err
-	}
-	for n := range result {
-		var (
-			father, mother uint
-			siblings       string
-		)
-		err = l.family.QueryRow(result[n].Famc).Scan(&father, &mother, &siblings)
-		if err != nil {
-			return 0, nil, err
+		r := Row{
+			Person:   p,
+			Parents:  make([]*Person, len(p.Parents)),
+			Siblings: make([]*Person, len(p.Siblings)),
+			Spouses:  make([]*Person, len(p.Spouses)),
+			Children: make([]*Person, len(p.Children)),
 		}
-		for _, fid := range result[n].Fams {
-			var (
-				husband, wife uint
-				children      string
-			)
-			err = l.family.QueryRow(fid).Scan(&husband, &wife, &children)
-			if err != nil {
-				return 0, nil, err
+
+		for n, pid := range p.Parents {
+			np, ok := cache[pid]
+			if !ok {
+				np, err = c.Person(pid)
+				if err != nil {
+					return 0, nil, err
+				}
+				cache[pid] = np
 			}
-
+			r.Parents[n] = np
 		}
-	}
-	return num, result, nil
-}
 
-type Person struct {
-	ID                  uint
-	FirstName, LastName string
-	Sex                 string
-	Dead                bool
-	Famc                uint
-	Fams                []uint
+		for n, pid := range p.Siblings {
+			np, ok := cache[pid]
+			if !ok {
+				np, err = c.Person(pid)
+				if err != nil {
+					return 0, nil, err
+				}
+				cache[pid] = np
+			}
+			r.Siblings[n] = np
+		}
+
+		for n, pid := range p.Spouses {
+			np, ok := cache[pid]
+			if !ok {
+				np, err = c.Person(pid)
+				if err != nil {
+					return 0, nil, err
+				}
+				cache[pid] = np
+			}
+			r.Spouses[n] = np
+		}
+
+		for n, pid := range p.Children {
+			np, ok := cache[pid]
+			if !ok {
+				np, err = c.Person(pid)
+				if err != nil {
+					return 0, nil, err
+				}
+				cache[pid] = np
+			}
+			r.Children[n] = np
+		}
+
+		results = append(results, r)
+	}
+
+	return num, results, nil
 }
 
 type Row struct {
 	*Person
-	Parents, Siblings, Children, Spouses []*Person
+	Parents, Siblings, Spouses, Children []*Person
 }
 
 func NewConnPool(databaseURL string) *ConnPool {
 	return &ConnPool{
 		Pool: sync.Pool{
 			New: func() interface{} {
-				const (
-					personTerms = "[id], [fname], [lname], [sex], IF([deathdate] = '', 0, 1) AS [isdead], [famc], [fams]"
-					familyTerms = "[husband], [wife], [children]"
-				)
 				db, _ := sql.Open("sqlite3", databaseURL)
 				countIndex, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE [lname] LIKE CONCAT(?, '%');")
-				index, _ := db.Prepare("SELECT " + personTerms + " FROM [People] WHERE [lname] LIKE CONCAT(?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
+				index, _ := db.Prepare("SELECT [id] FROM [People] WHERE [lname] LIKE CONCAT(?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
 				countSearch, _ := db.Prepare("SELECT COUNT(1) FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%');")
-				search, _ := db.Prepare("SELECT " + personTerms + " FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
-				person, _ := db.Prepare("SELECT " + personTerms + " FROM [People] WHERE [id] = ?;")
-				family, _ := db.Prepare("SELECT " + familyTerms + " FROM [People] WHERE [id] = ?;")
+				search, _ := db.Prepare("SELECT [id] FROM [People] WHERE CONCAT([fname], ' ', [lname]) LIKE CONCAT('%', ?, '%') ORDER BY [lname] ASC, [fname] ASC LIMIT ? OFFSET ?;")
+				person, _ := db.Prepare("SELECT [id], [fname], [lname], [sex], IF([deathdate] = '', 0, 1) AS [isdead], [famc], [fams] FROM [People] WHERE [id] = ?;")
+				family, _ := db.Prepare("SELECT [husband], [wife], [children] FROM [People] WHERE [id] = ?;")
 				l := &Conn{
 					db:          db,
 					countIndex:  countIndex,
