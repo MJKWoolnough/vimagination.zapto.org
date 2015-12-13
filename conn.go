@@ -99,6 +99,27 @@ func (c *Conn) Search(query string, perPage, page uint) (uint, []Row, error) {
 	return c.index(l.searchCount, l.search, char, perPage, page)
 }
 
+type PersonCache struct {
+	c     *Conn
+	cache map[uint]*Person
+}
+
+func (pc *PersonCache) Get(ids ...uint) ([]*Person, error) {
+	toRet := make([]*Person, len(ids))
+	for n, pid := range ids {
+		p, ok := pc.cache[pid]
+		if !ok {
+			p, err = pc.c.Person(id)
+			if err != nil {
+				return nil, err
+			}
+			pc.cache[id] = p
+		}
+		toRet[n] = p
+	}
+	return toRet, nil
+}
+
 func (c *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint) (uint, []Row, error) {
 	var num uint
 	err := count.QueryRow(char).Scan(&num)
@@ -126,71 +147,40 @@ func (c *Conn) index(count, query *sql.Stmt, queryStr string, perPage, page uint
 	rows.Close()
 
 	results := make([]Row, 0, len(ids))
-	cache := make(map[uint]*Person)
+	cache := PersonCache{
+		c,
+		make(map[uint]*Person),
+	}
 
 	for _, id := range ids {
-		p, ok := cache[id]
-		if !ok {
-			p, err = c.Person(id)
-			if err != nil {
-				return 0, nil, err
-			}
-			cache[id] = p
+		p, err := cache.Get(id)
+		if err != nil {
+			return 0, nil, err
 		}
+
+		parents, err := cache.Get(p[0].Parents...)
+		if err != nil {
+			return 0, nil, err
+		}
+		siblings, err := cache.Get(p[0].Siblings...)
+		if err != nil {
+			return 0, nil, err
+		}
+		spouses, err := cache.Get(p[0].Spouses...)
+		if err != nil {
+			return 0, nil, err
+		}
+		children, err := cache.Get(p[0].Children...)
+		if err != nil {
+			return 0, nil, err
+		}
+
 		r := Row{
 			Person:   p,
-			Parents:  make([]*Person, len(p.Parents)),
-			Siblings: make([]*Person, len(p.Siblings)),
-			Spouses:  make([]*Person, len(p.Spouses)),
-			Children: make([]*Person, len(p.Children)),
-		}
-
-		for n, pid := range p.Parents {
-			np, ok := cache[pid]
-			if !ok {
-				np, err = c.Person(pid)
-				if err != nil {
-					return 0, nil, err
-				}
-				cache[pid] = np
-			}
-			r.Parents[n] = np
-		}
-
-		for n, pid := range p.Siblings {
-			np, ok := cache[pid]
-			if !ok {
-				np, err = c.Person(pid)
-				if err != nil {
-					return 0, nil, err
-				}
-				cache[pid] = np
-			}
-			r.Siblings[n] = np
-		}
-
-		for n, pid := range p.Spouses {
-			np, ok := cache[pid]
-			if !ok {
-				np, err = c.Person(pid)
-				if err != nil {
-					return 0, nil, err
-				}
-				cache[pid] = np
-			}
-			r.Spouses[n] = np
-		}
-
-		for n, pid := range p.Children {
-			np, ok := cache[pid]
-			if !ok {
-				np, err = c.Person(pid)
-				if err != nil {
-					return 0, nil, err
-				}
-				cache[pid] = np
-			}
-			r.Children[n] = np
+			Parents:  parents,
+			Siblings: siblings,
+			Spouses:  spouses,
+			Children: children,
 		}
 
 		results = append(results, r)
