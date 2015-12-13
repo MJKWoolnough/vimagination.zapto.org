@@ -167,40 +167,47 @@ func (c *Conn) getIndex(count, query *sql.Stmt, queryStr string, perPage, page u
 	}
 
 	for _, id := range ids {
-		p, err := cache.Get(id)
+		r, err := PersonRow(id, cache.Get)
 		if err != nil {
 			return 0, nil, err
-		}
-
-		parents, err := cache.Get(p[0].Parents...)
-		if err != nil {
-			return 0, nil, err
-		}
-		siblings, err := cache.Get(p[0].Siblings...)
-		if err != nil {
-			return 0, nil, err
-		}
-		spouses, err := cache.Get(p[0].Spouses...)
-		if err != nil {
-			return 0, nil, err
-		}
-		children, err := cache.Get(p[0].Children...)
-		if err != nil {
-			return 0, nil, err
-		}
-
-		r := Row{
-			Person:   p[0],
-			Parents:  parents,
-			Siblings: siblings,
-			Spouses:  spouses,
-			Children: children,
 		}
 
 		results = append(results, r)
 	}
 
 	return num, results, nil
+}
+
+func PersonRow(id uint, getFunc func(...uint) ([]*Person, error)) (Row, error) {
+	p, err := getFunc(id)
+	if err != nil {
+		return Row{}, err
+	}
+
+	parents, err := getFunc(p[0].Parents...)
+	if err != nil {
+		return Row{}, err
+	}
+	siblings, err := getFunc(p[0].Siblings...)
+	if err != nil {
+		return Row{}, err
+	}
+	spouses, err := getFunc(p[0].Spouses...)
+	if err != nil {
+		return Row{}, err
+	}
+	children, err := getFunc(p[0].Children...)
+	if err != nil {
+		return Row{}, err
+	}
+
+	return Row{
+		Person:   p[0],
+		Parents:  parents,
+		Siblings: siblings,
+		Spouses:  spouses,
+		Children: children,
+	}, nil
 }
 
 type Row struct {
