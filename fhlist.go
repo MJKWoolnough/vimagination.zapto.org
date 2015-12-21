@@ -9,14 +9,14 @@ import (
 )
 
 type Letter struct {
-	data *string
+	data *byte
 }
 
 func (l Letter) Parse(d []string) error {
 	if len(d[0]) == 1 {
 		for i := byte('A'); i <= 'Z'; i++ {
 			if d[0][0] == i {
-				*l.data = d[0]
+				*l.data = i - 'A' + 1
 				break
 			}
 		}
@@ -26,7 +26,7 @@ func (l Letter) Parse(d []string) error {
 
 type IndexVars struct {
 	Page   uint
-	Letter string
+	Letter byte
 	Query  string
 }
 
@@ -40,53 +40,61 @@ func (i *IndexVars) ParserList() form.ParserList {
 
 type List struct {
 	Template *template.Template
-	Pool     *ConnPool
 }
 
 func (l *List) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	const perPage = 10
-	lc := l.Pool.Get().(*Conn)
-	defer l.Pool.Put(lc)
-	var index IndexVars
+	const perPage = 20
+	var iv IndexVars
 	r.ParseForm()
-	form.Parse(&index, r.Form)
-	if index.Page == 0 {
-		index.Page = 1
-	}
+	form.Parse(&iv, r.Form)
 	var (
-		rows    []Row
-		num     uint
-		urlBase string
+		urlBase        string
+		index          Index
+		paginationHTML template.HTML
 	)
-	if index.Query != "" {
-		index.Letter = ""
-		var err error
-		num, rows, err = lc.Search(index.Query, perPage, index.Page-1)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		urlBase = "?query=" + template.HTMLEscapeString(index.Query) + "&amp;page="
-	} else if index.Letter != "" {
-		var err error
-		num, rows, err = lc.Index(index.Letter, perPage, index.Page-1)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		urlBase = "?letter=" + index.Letter + "&amp;page="
+	if iv.Query != "" {
+		iv.Letter = 0
+		// store/restore with session storage???
+		index = GedcomData.Search(iv.Query)
+		urlBase = "?query=" + template.HTMLEscapeString(iv.Query) + "&amp;page="
+	} else if iv.Letter > 0 {
+		index = GedcomData.Indexes[iv.Letter-1]
+		urlBase = "?letter=" + string([]byte{iv.Letter + 'A' - 1}) + "&amp;page="
 	}
-	totalPages := num / perPage
+	if iv.Page != 0 {
+		iv.Page--
+	}
+	if iv.Page*perPage > uint(len(index)) {
+		iv.Page = 0
+	}
+	if index != nil {
+		numPages := uint(len(index)) / perPage
+		if numPages > 0 && len(index)%perPage == 0 {
+			numPages--
+		}
+		first := iv.Page * perPage
+		last := (iv.Page + 1) * perPage
+		if first > uint(len(index)) {
+			first = 0
+			last = 0
+		}
+		if last > uint(len(index)) {
+			index = index[first:]
+		} else {
+			index = index[first:last]
+		}
+		paginationHTML = template.HTML(pagination.New().Get(iv.Page, numPages).HTML(urlBase))
+	}
 	tv := struct {
 		IndexVars
 		HasRows    bool
-		Rows       []Row
+		Rows       Index
 		Pagination template.HTML
 	}{
+		iv,
+		index != nil,
 		index,
-		len(rows) > 0,
-		rows,
-		template.HTML(pagination.New().Get(index.Page-1, totalPages).HTML(urlBase)),
+		paginationHTML,
 	}
 
 	l.Template.Execute(w, tv)
