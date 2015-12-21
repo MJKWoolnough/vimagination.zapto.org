@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Jaki Woolnough's Family Tree - {{.FirstName}} {{.Surname}}</title>
+		<link rel="icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="shortcut icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" type="text/css" media="screen" title="Default Style" href="/FH/styles/2010/tree.css" />
+		<!--[if IE]><style>body { behavior:url("/FH/styles/csshover.htc"); }</style><![endif]-->
+		<script type="text/javascript" src="/FH/scripts/tree.js"></script>
+		<script type="text/javascript" src="/FH/scripts/general.js"></script>
+		<!--[if IE 6]><link rel="stylesheet" type="text/css" href="/FH/styles/2010/tree_ie6.css"><![endif]-->
+		<!--[if IE 7]><link rel="stylesheet" type="text/css" href="/FH/styles/2010/tree_ie7.css"><![endif]-->
+	</head>
+	<body>
+		<div id="contentblock" class="hasParents">
+			<h2>{{.FirstName}} {{.Surname}}</h2>
+			<a href="list.html">Back</a>
+			<div id="me" class="person row_2 sex_{{.Gender}}">
+				<a href="tree.html?id={{.ID}}">
+					<span class="name">{{.FirstName}} {{.Surname}}</span>
+				</a>
+			</div>
+		</div>
+	</body>
+</html>
