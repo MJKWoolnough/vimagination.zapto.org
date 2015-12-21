@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	gedcomFile  = flag.String("-g", "./tree.ged", "GEDCOM file")
-	templateDir = flag.String("-t", "./templates", "template directory")
-	filesDir    = flag.String("-f", "./files", "files directory")
-	logName     = flag.String("-n", "", "name for logging")
+	gedcomFile  = flag.String("g", "./tree.ged", "GEDCOM file")
+	templateDir = flag.String("t", "./templates", "template directory")
+	filesDir    = flag.String("f", "./files", "files directory")
+	logName     = flag.String("n", "", "name for logging")
 	logger      *log.Logger
 )
 
