@@ -57,7 +57,7 @@ func main() {
 		close(cc)
 	}()
 
-	err := client.Run()
+	err = client.Run()
 
 	select {
 	case <-cc:
