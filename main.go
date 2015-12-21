@@ -16,13 +16,16 @@ var (
 	gedcomFile  = flag.String("-g", "./tree.ged", "GEDCOM file")
 	templateDir = flag.String("-t", "./templates", "template directory")
 	filesDir    = flag.String("-f", "./files", "files directory")
+	logName     = flag.String("-n", "", "name for logging")
+	logger      *log.Logger
 )
 
 func main() {
 	flag.Parse()
+	logger = log.New(os.Stderr, *logName, log.LstdFlags)
 	err := SetupGedcomData(*gedcomFile)
 	if err != nil {
-		log.Println("error reading GEDCOM file: ", err)
+		logger.Println("error reading GEDCOM file: ", err)
 		return
 	}
 
@@ -42,12 +45,12 @@ func main() {
 
 	cc := make(chan struct{})
 	go func() {
-		log.Println("Server Started")
+		logger.Println("Server Started")
 		sc := make(chan os.Signal, 1)
 		signal.Notify(sc, os.Interrupt)
 		select {
 		case <-sc:
-			log.Println("Closing")
+			logger.Println("Closing")
 		case <-cc:
 		}
 		signal.Stop(sc)
@@ -62,7 +65,7 @@ func main() {
 	select {
 	case <-cc:
 	default:
-		log.Println(err)
+		logger.Println(err)
 		cc <- struct{}{}
 	}
 	<-cc
