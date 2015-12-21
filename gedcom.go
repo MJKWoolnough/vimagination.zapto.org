@@ -104,7 +104,12 @@ func SetupGedcomData(filename string) error {
 		person := GedcomData.People[idToUint(indi.ID)]
 		if len(indi.PersonalNameStructure) > 0 {
 			name := strings.Split(string(indi.PersonalNameStructure[0].NamePersonal), "/")
-			person.FirstName = name[0]
+			if indi.Death.Date == "" {
+				firstname := strings.Split(name[0], " ")
+				person.FirstName = firstname[0]
+			} else {
+				person.FirstName = name[0]
+			}
 			if len(name) > 1 {
 				person.Surname = name[1]
 			}
