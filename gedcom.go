@@ -49,10 +49,11 @@ type gedcomData struct {
 var GedcomData gedcomData
 
 func (g gedcomData) Search(terms string) Index {
+	terms = strings.ToLower(terms)
 	in := make(Index, 0, 1024)
 Search:
 	for _, person := range g.People {
-		name := person.FirstName + " " + person.Surname
+		name := strings.ToLower(person.FirstName + " " + person.Surname)
 		for _, term := range strings.Split(terms, " ") {
 			if !strings.Contains(name, term) {
 				continue Search
