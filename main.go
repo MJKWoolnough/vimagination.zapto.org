@@ -5,10 +5,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/smtp"
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 
+	"github.com/MJKWoolnough/webserver/contact"
 	"github.com/MJKWoolnough/webserver/proxy/client"
 )
 
@@ -28,6 +31,37 @@ func main() {
 		logger.Println("error reading GEDCOM file: ", err)
 		return
 	}
+
+	from := os.Getenv("contactFormFrom")
+	os.Unsetenv("contactFormFrom")
+	to := os.Getenv("contactFormTo")
+	os.Unsetenv("contactFormTo")
+	addr := os.Getenv("contactFormAddr")
+	os.Unsetenv("contactFormAddr")
+	username := os.Getenv("contactFormUsername")
+	os.Unsetenv("contactFormUsername")
+	password := os.Getenv("contactFormPassword")
+	os.Unsetenv("contactFormPassword")
+	p := strings.IndexByte(addr, ':')
+	addrMPort := addr
+	if p > 0 {
+		addrMPort = addrMPort[:p]
+	}
+	tmpl := template.Must(template.ParseFiles(path.Join(*filesDir, "/FH/contact.html")))
+	ec := make(chan error)
+	go func() {
+		for {
+			logger.Println(<-ec)
+		}
+	}()
+	http.Handle("/FH/contact.html", &contact.Contact{
+		Template: tmpl,
+		From:     from,
+		To:       to,
+		Host:     addr,
+		Auth:     smtp.PlainAuth("", username, password, addrMPort),
+		Err:      ec,
+	})
 
 	http.Handle("/FH/list.html", &List{
 		Template: template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
