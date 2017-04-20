@@ -23,6 +23,16 @@ var (
 	logger      *log.Logger
 )
 
+var templateFuncs = template.FuncMap{
+	"mul":  func(i, j uint) uint { return i * j },
+	"add":  func(i, j uint) uint { return i + j },
+	"sub":  func(i, j uint) uint { return i - j },
+	"subr": func(i, j uint) uint { return j - i },
+	"uint": func(i int) uint { return uint(i) },
+	"int":  func(i uint) int { return int(i) },
+	"gtr":  func(i, j uint) bool { return j > i },
+}
+
 func main() {
 	flag.Parse()
 	logger = log.New(os.Stderr, *logName, log.LstdFlags)
@@ -66,10 +76,10 @@ func main() {
 	http.Handle("/FH/list.html", &List{
 		Template: template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
 	})
-
 	tree := &Tree{
-		HTMLTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
-		JSTemplate:   template.Must(template.ParseFiles(path.Join(*templateDir, "tree.js.tmpl"))),
+		//HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(template.FuncMap{"mul": func(i, j int) int { return i * j }}).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
+		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
+		//JSTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "tree.js.tmpl"))),
 	}
 
 	http.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))

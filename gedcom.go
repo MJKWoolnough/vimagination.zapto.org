@@ -95,7 +95,11 @@ func SetupGedcomData(filename string) error {
 			fs = append(fs, t)
 		}
 	}
-	unknownPerson := &Person{}
+	unknownPerson := &Person{
+		Gender:    'U',
+		FirstName: "?",
+		Surname:   "?",
+	}
 	unknownFamily := &Family{
 		Husband: unknownPerson,
 		Wife:    unknownPerson,
