@@ -5,11 +5,7 @@
 		<link rel="icon" href="/FH/images/favicon.ico" type="image/x-icon" />
 		<link rel="shortcut icon" href="/FH/images/favicon.ico" type="image/x-icon" />
 		<link rel="stylesheet" type="text/css" media="screen" title="Default Style" href="/FH/styles/2010/tree.css" />
-		<!--[if IE]><style>body { behavior:url("/FH/styles/csshover.htc"); }</style><![endif]-->
-		<!--<script type="text/javascript" src="/FH/scripts/tree.js"></script>
-		<script type="text/javascript" src="/FH/scripts/general.js"></script>-->
-		<!--[if IE 6]><link rel="stylesheet" type="text/css" href="/FH/styles/2010/tree_ie6.css"><![endif]-->
-		<!--[if IE 7]><link rel="stylesheet" type="text/css" href="/FH/styles/2010/tree_ie7.css"><![endif]-->
+		<script type="text/javascript" src="/FH/scripts/tree.js"></script>
 	</head>
 	<body>
 		{{$me := .}}
@@ -53,7 +49,7 @@
 					{{end}}
 					{{range $c, $child := .Children}}
 						{{if ne $c 0}}
-							<div class="upLeft" style="left: {{$me.ChildPos $n $c | mul 200 | subr 75}}px; top: 410px; width: 200px; height: 85px;"></div>
+							<div class="upLeft" style="left: {{$me.ChildPos $n $c | mul 200 | subr 75}}px; top: 410px;"></div>
 						{{end}}
 						<div class="person row_3 sex_{{printf "%c" .Gender}}" style="left: {{$me.ChildPos $n $c | mul 200 | add 50}}px">
 							{{if ne .ID 0}}<a href="tree.html?id={{.ID}}">{{end}}
@@ -72,7 +68,7 @@
 				{{end}}
 				{{range $n, $sibling := .ChildOf.Children}}
 					{{if ne .ID $me.ID}}
-						<div class="upLeft" style="left: {{$me.SiblingPos $n $me.ID | mul 200 | subr 75}}px; top: 210px; width: 200px; height: 85px;"></div>
+						<div class="upLeft" style="left: {{$me.SiblingPos $n $me.ID | mul 200 | subr 75}}px; top: 210px;"></div>
 						<div class="person row_2 sex_{{.Gender | printf "%c"}}" style="left: {{$me.SiblingPos $n $me.ID | mul 200 | add 50}}px">
 							{{if ne .ID 0}}<a href="tree.html?id={{.ID}}">{{end}}
 								<span class="name">{{.FirstName}} {{.Surname}}</span>
