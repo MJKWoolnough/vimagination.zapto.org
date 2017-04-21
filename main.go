@@ -5,11 +5,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/rpc"
 	"net/smtp"
 	"os"
 	"os/signal"
 	"path"
 	"strings"
+
+	"golang.org/x/net/websocket"
 
 	"github.com/MJKWoolnough/webserver/contact"
 	"github.com/MJKWoolnough/webserver/proxy/client"
@@ -36,8 +39,11 @@ var templateFuncs = template.FuncMap{
 func main() {
 	flag.Parse()
 	logger = log.New(os.Stderr, *logName, log.LstdFlags)
-	err := SetupGedcomData(*gedcomFile)
-	if err != nil {
+	if err := rpc.Register(RPC{}); err != nil {
+		logger.Println(err)
+		return
+	}
+	if err := SetupGedcomData(*gedcomFile); err != nil {
 		logger.Println("error reading GEDCOM file: ", err)
 		return
 	}
@@ -77,13 +83,11 @@ func main() {
 		Template: template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
 	})
 	tree := &Tree{
-		//HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(template.FuncMap{"mul": func(i, j int) int { return i * j }}).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
-		//JSTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "tree.js.tmpl"))),
 	}
 
 	http.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
-	http.Handle("/FH/tree.js", http.HandlerFunc(tree.JS))
+	http.Handle("/FH/rpc", websocket.Handler(rpcHandler))
 
 	http.Handle("/", http.FileServer(http.Dir(*filesDir)))
 
@@ -104,7 +108,7 @@ func main() {
 		close(cc)
 	}()
 
-	err = client.Run()
+	err := client.Run()
 
 	select {
 	case <-cc:
