@@ -42,8 +42,9 @@ func (in Index) Swap(i, j int) {
 }
 
 type gedcomData struct {
-	People  map[uint]*Person
-	Indexes [26]Index
+	People   map[uint]*Person
+	Families map[uint]*Family
+	Indexes  [26]Index
 }
 
 var GedcomData gedcomData
@@ -72,7 +73,7 @@ func SetupGedcomData(filename string) error {
 	}
 	defer f.Close()
 	GedcomData.People = make(map[uint]*Person)
-	families := make(map[uint]*Family)
+	GedcomData.Families = make(map[uint]*Family)
 	ps := make([]*gedcom.Individual, 0, 1024)
 	fs := make([]*gedcom.Family, 0, 1024)
 	r := gedcom.NewReader(f, gedcom.AllowMissingRequired, gedcom.IgnoreInvalidValue, gedcom.AllowUnknownCharset, gedcom.AllowTerminatorsInValue, gedcom.AllowWrongLength, gedcom.AllowInvalidEscape, gedcom.AllowInvalidChars)
@@ -91,7 +92,7 @@ func SetupGedcomData(filename string) error {
 			ps = append(ps, t)
 		case *gedcom.Family:
 			id := idToUint(t.ID)
-			families[id] = &Family{ID: id}
+			GedcomData.Families[id] = &Family{ID: id}
 			fs = append(fs, t)
 		}
 	}
@@ -132,14 +133,14 @@ func SetupGedcomData(filename string) error {
 			person.Gender = 'U'
 		}
 		if len(indi.ChildOf) > 0 {
-			person.ChildOf = families[idToUint(indi.ChildOf[0].ID)]
+			person.ChildOf = GedcomData.Families[idToUint(indi.ChildOf[0].ID)]
 		}
 		if person.ChildOf == nil {
 			person.ChildOf = unknownFamily
 		}
 		person.SpouseOf = make([]*Family, len(indi.SpouseOf))
 		for n, spouse := range indi.SpouseOf {
-			person.SpouseOf[n] = families[idToUint(spouse.ID)]
+			person.SpouseOf[n] = GedcomData.Families[idToUint(spouse.ID)]
 		}
 		if len(person.Surname) > 0 {
 			n := strings.ToUpper(person.Surname)
@@ -150,7 +151,7 @@ func SetupGedcomData(filename string) error {
 		}
 	}
 	for _, fam := range fs {
-		family := families[idToUint(fam.ID)]
+		family := GedcomData.Families[idToUint(fam.ID)]
 		family.Husband = GedcomData.People[idToUint(fam.Husband)]
 		if family.Husband == nil {
 			family.Husband = unknownPerson
