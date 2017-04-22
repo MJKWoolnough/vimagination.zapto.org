@@ -91,23 +91,19 @@ func GetParents(id uint) (uint, uint) {
 	return mother, father
 }
 
-func (f finder) findDirectRelationship(fid, sid uint) (*links, error) {
+func (c Calculator) findDirectRelationship(fid, sid uint) (*links, error) {
 	tf := make([]person, 2, 1024)
 	tf[0] = person{fid, fid, nil}
 	tf[1] = person{sid, sid, nil}
 	for len(tf) > 0 {
 		p := tf[0]
 		tf = tf[1:]
-		mother, father, err := GetParents(p.id)
-		for _, parent := range [2]uint{mother, father} {
-			if parent == 0 {
-				continue
-			}
-			pid := uint(parent.Int64)
+		mother, father := GetParents(p.id)
+		for _, pid := range [2]uint{mother, father} {
 			if pid == 0 {
 				continue
 			}
-			if got, ok := f.data[pid]; ok {
+			if got, ok := c[pid]; ok {
 				if got.side == p.side {
 					continue
 				}
@@ -120,12 +116,12 @@ func (f finder) findDirectRelationship(fid, sid uint) (*links, error) {
 					second = got
 				}
 				var data []personData
-				cf, err := f.followRouteDown(first, &data)
+				cf, err := c.followRouteDown(first, &data)
 				if err != nil {
 					return nil, err
 				}
 				reverse(data)
-				cs, err := f.followRouteDown(second, &data)
+				cs, err := c.followRouteDown(second, &data)
 				if err != nil {
 					return nil, err
 				}
@@ -136,21 +132,17 @@ func (f finder) findDirectRelationship(fid, sid uint) (*links, error) {
 				return &links{data, cs - 2, diff}, nil
 			}
 			tf = append(tf, person{pid, p.side, &p})
-			f.data[pid] = &tf[len(tf)-1]
+			c[pid] = &tf[len(tf)-1]
 		}
 	}
 	return nil, nil
 }
 
-func (f finder) followRouteDown(from *person, data *[]personData) (int, error) {
+func (c Calculator) followRouteDown(from *person, data *[]personData) (int, error) {
 	count := 0
 	for ; from != nil; from = from.from {
 		var fname, lname, sex string
-
-		err := f.getData.QueryRow(from.id).Scan(&fname, &lname, &sex)
-		if err != nil {
-			return count, err
-		}
+		//fill data
 		*data = append(*data, personData{
 			ID:                 from.id,
 			FName:              fname,
