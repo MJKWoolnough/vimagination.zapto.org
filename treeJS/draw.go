@@ -39,20 +39,28 @@ type Box struct {
 	MinCol, MaxCol int
 }
 
+func NewBox(row int) Box {
+	return Box{
+		Row:    row,
+		MaxCol: 65535,
+	}
+}
+
 type Children struct {
 	Parents  *Spouse
 	Children []Child
 	Box
 }
 
-func NewChildren(f *Family, parents *Spouse) Children {
+func NewChildren(f *Family, parents *Spouse, row int) Children {
 	children := f.Children()
 	c := Children{
 		Parents:  parents,
 		Children: make([]Child, len(children)),
+		Box:      NewBox(row),
 	}
 	for n, child := range children {
-		c.Children[n] = NewChild(child, &c)
+		c.Children[n] = NewChild(child, &c, row)
 	}
 	return c
 }
@@ -64,13 +72,14 @@ type Child struct {
 	Box
 }
 
-func NewChild(p *Person, siblings *Children) Child {
+func NewChild(p *Person, siblings *Children, row int) Child {
 	c := Child{
 		Siblings: siblings,
 		Person:   p,
+		Box:      NewBox(row),
 	}
 	if p.Expand {
-		c.Spouses = NewSpouses(p.SpouseOf(), &c)
+		c.Spouses = NewSpouses(p.SpouseOf(), &c, row)
 	}
 	return c
 }
@@ -81,16 +90,17 @@ type Spouses struct {
 	Box
 }
 
-func NewSpouses(families []*Family, spouse *Child) Spouses {
+func NewSpouses(families []*Family, spouse *Child, row int) Spouses {
 	s := Spouses{
 		Spouse:  spouse,
 		Spouses: make([]Spouse, len(families)),
+		Box:     NewBox(row),
 	}
 	for n, f := range families {
 		if spouse.Gender == 'F' {
-			s.Spouses[n] = NewSpouse(f, f.Husband(), &s)
+			s.Spouses[n] = NewSpouse(f, f.Husband(), &s, row)
 		} else {
-			s.Spouses[n] = NewSpouse(f, f.Wife(), &s)
+			s.Spouses[n] = NewSpouse(f, f.Wife(), &s, row)
 		}
 	}
 	return s
@@ -103,12 +113,13 @@ type Spouse struct {
 	Box
 }
 
-func NewSpouse(f *Family, p *Person, spouses *Spouses) Spouse {
+func NewSpouse(f *Family, p *Person, spouses *Spouses, row int) Spouse {
 	s := Spouse{
 		Spouses: spouses,
 		Person:  p,
+		Box:     NewBox(row),
 	}
-	s.Children = NewChildren(f, &s)
+	s.Children = NewChildren(f, &s, row+1)
 	return s
 }
 
@@ -133,10 +144,8 @@ func DrawTree() {
 	lines.AppendChild(Marriage(0, 0, 1))
 	lines.AppendChild(DownLeft(0, 1))
 
-	tree := NewChildren(topFam, nil)
+	tree := NewChildren(topFam, nil, 0)
 	_ = tree
-
-	Process(top.ChildOf(), 1, 0)
 
 	xjs.RemoveChildren(xjs.Body())
 	xjs.AppendChildren(xjs.Body(), lines)
@@ -152,18 +161,6 @@ const (
 	colGap   = 200
 	boxWidth = 150
 )
-
-func Process(f *Family, row, col int) int {
-	for _, child := range f.Children() {
-		if child.Expand {
-			for _, family := range child.SpouseOf() {
-				max := Process(family, row+1, rows[row])
-				_ = max
-			}
-		}
-	}
-	return 0
-}
 
 func PersonBox(p *Person, row, col int, spouse bool) dom.Node {
 	name := xdom.Span()
