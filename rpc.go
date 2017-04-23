@@ -14,6 +14,7 @@ func rpcHandler(conn *websocket.Conn) {
 type RPC struct{}
 
 type RPCPerson struct {
+	ID                 uint
 	FirstName, Surname string
 	Gender             byte
 	ChildOf            uint
@@ -25,6 +26,7 @@ func (RPC) GetPerson(id uint, person *RPCPerson) error {
 	if !ok {
 		return errors.Error("unknown id")
 	}
+	person.ID = p.ID
 	person.FirstName = p.FirstName
 	person.Surname = p.Surname
 	switch p.Gender {
