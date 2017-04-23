@@ -9,6 +9,8 @@ import (
 	"honnef.co/go/js/dom"
 )
 
+var selectedID, focusID uint
+
 func main() {
 	dom.GetWindow().AddEventListener("load", false, func(dom.Event) {
 		go func() {
@@ -21,7 +23,7 @@ func main() {
 				xjs.Alert("Failed to Parse Query: %s", err)
 				return
 			}
-			focusID, err := strconv.ParseUint(v.Get("id"), 10, 64)
+			fID, err := strconv.ParseUint(v.Get("id"), 10, 64)
 			if err != nil {
 				xjs.Alert("Failed to get ID: %s", err)
 				return
@@ -30,9 +32,10 @@ func main() {
 				xjs.Alert("RPC initialisation failed: %s", err)
 				return
 			}
+			focusID = uint(fID)
 			me := RPC.GetPerson(uint(focusID))
 			me.Expand = true
-			DrawTree(me)
+			DrawTree()
 		}()
 	})
 }

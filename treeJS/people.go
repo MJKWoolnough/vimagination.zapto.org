@@ -1,6 +1,7 @@
 package main
 
 type Person struct {
+	ID                 uint
 	FirstName, Surname string
 	Gender             byte
 	ChildOfID          uint   `json:"ChildOf"`
@@ -8,15 +9,15 @@ type Person struct {
 	Expand             bool
 }
 
-func (p Person) SpouseOf() []Family {
-	families := make([]Family, len(p.SpouseOfIDs))
+func (p Person) SpouseOf() []*Family {
+	families := make([]*Family, len(p.SpouseOfIDs))
 	for n, fid := range p.SpouseOfIDs {
 		families[n] = GetFamily(fid)
 	}
 	return families
 }
 
-func (p Person) ChildOf() Family {
+func (p Person) ChildOf() *Family {
 	return GetFamily(p.ChildOfID)
 }
 
@@ -26,16 +27,16 @@ type Family struct {
 	ChildrenIDs []uint `json:"Children"`
 }
 
-func (f Family) Husband() Person {
+func (f Family) Husband() *Person {
 	return GetPerson(f.HusbandID)
 }
 
-func (f Family) Wife() Person {
+func (f Family) Wife() *Person {
 	return GetPerson(f.WifeID)
 }
 
-func (f Family) Children() []Person {
-	people := make([]Person, len(f.ChildrenIDs))
+func (f Family) Children() []*Person {
+	people := make([]*Person, len(f.ChildrenIDs))
 	for n, pid := range f.ChildrenIDs {
 		people[n] = GetPerson(pid)
 	}
