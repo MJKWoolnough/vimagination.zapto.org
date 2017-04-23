@@ -1,13 +1,11 @@
 package main
 
 import (
-	"net/rpc"
-	"net/rpc/jsonrpc"
+	"github.com/MJKWoolnough/gopherjs/rpc"
 
 	"honnef.co/go/js/dom"
 
 	"github.com/gopherjs/gopherjs/js"
-	"github.com/gopherjs/websocket"
 )
 
 var RPC jRPC
@@ -17,14 +15,14 @@ type jRPC struct {
 }
 
 func InitRPC() error {
-	conn, err := websocket.Dial("ws://" + js.Global.Get("location").Get("host").String() + "/FH/rpc")
+	conn, err := rpc.Dial("ws://" + js.Global.Get("location").Get("host").String() + "/FH/rpc")
 	if err != nil {
 		return err
 	}
 	dom.GetWindow().AddEventListener("beforeunload", false, func(dom.Event) {
 		conn.Close()
 	})
-	RPC.rpc = jsonrpc.NewClient(conn)
+	RPC.rpc = conn
 	return nil
 }
 
