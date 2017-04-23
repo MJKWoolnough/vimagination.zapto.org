@@ -10,12 +10,110 @@ import (
 )
 
 var (
-	rows         [1024]int
+	rows         Rows
 	lines, boxes dom.Node
 )
 
-func DrawTree(p Person) {
-	top := p
+type Rows []int
+
+func (r *Rows) GetRow(row int) int {
+	if len(*r) <= row {
+		return 0
+	}
+	return (*r)[row]
+}
+
+func (r *Rows) SetRow(row, pos int) {
+	if len(*r) <= row {
+		*r = append(*r, make(Rows, row+1-len(*r))...)
+	}
+	(*r)[row] = pos
+}
+
+func (r *Rows) Reset() {
+	*r = (*r)[:0]
+}
+
+type Box struct {
+	Row            int
+	MinCol, MaxCol int
+}
+
+type Children struct {
+	Parents  *Spouse
+	Children []Child
+	Box
+}
+
+func NewChildren(f *Family, parents *Spouse) Children {
+	children := f.Children()
+	c := Children{
+		Parents:  parents,
+		Children: make([]Child, len(children)),
+	}
+	for n, child := range children {
+		c.Children[n] = NewChild(child, &c)
+	}
+	return c
+}
+
+type Child struct {
+	Siblings *Children
+	*Person
+	Spouses
+	Box
+}
+
+func NewChild(p *Person, siblings *Children) Child {
+	c := Child{
+		Siblings: siblings,
+		Person:   p,
+	}
+	if p.Expand {
+		c.Spouses = NewSpouses(p.SpouseOf(), &c)
+	}
+	return c
+}
+
+type Spouses struct {
+	Spouse  *Child
+	Spouses []Spouse
+	Box
+}
+
+func NewSpouses(families []*Family, spouse *Child) Spouses {
+	s := Spouses{
+		Spouse:  spouse,
+		Spouses: make([]Spouse, len(families)),
+	}
+	for n, f := range families {
+		if spouse.Gender == 'F' {
+			s.Spouses[n] = NewSpouse(f, f.Husband(), &s)
+		} else {
+			s.Spouses[n] = NewSpouse(f, f.Wife(), &s)
+		}
+	}
+	return s
+}
+
+type Spouse struct {
+	Spouses *Spouses
+	*Person
+	Children
+	Box
+}
+
+func NewSpouse(f *Family, p *Person, spouses *Spouses) Spouse {
+	s := Spouse{
+		Spouses: spouses,
+		Person:  p,
+	}
+	s.Children = NewChildren(f, &s)
+	return s
+}
+
+func DrawTree() {
+	top := GetPerson(focusID)
 	for {
 		f := top.ChildOf()
 		if h := f.Husband(); h.Expand {
@@ -27,19 +125,24 @@ func DrawTree(p Person) {
 			break
 		}
 	}
-	rows = [1024]int{3}
 	lines = xdom.DocumentFragment()
 	boxes = xdom.DocumentFragment()
-	boxes.AppendChild(PersonBox(top.ChildOf().Husband(), 0, 0))
-	boxes.AppendChild(PersonBox(top.ChildOf().Wife(), 0, 1))
+	topFam := top.ChildOf()
+	boxes.AppendChild(PersonBox(topFam.Husband(), 0, 0, false))
+	boxes.AppendChild(PersonBox(topFam.Wife(), 0, 1, true))
 	lines.AppendChild(Marriage(0, 0, 1))
 	lines.AppendChild(DownLeft(0, 1))
+
+	tree := NewChildren(topFam, nil)
+	_ = tree
 
 	Process(top.ChildOf(), 1, 0)
 
 	xjs.RemoveChildren(xjs.Body())
 	xjs.AppendChildren(xjs.Body(), lines)
 	xjs.AppendChildren(xjs.Body(), boxes)
+
+	rows.Reset()
 }
 
 const (
@@ -50,23 +153,60 @@ const (
 	boxWidth = 150
 )
 
-func Process(f Family, row, col int) {
+func Process(f *Family, row, col int) int {
 	for _, child := range f.Children() {
-		// draw decendants first, left aligned
+		if child.Expand {
+			for _, family := range child.SpouseOf() {
+				max := Process(family, row+1, rows[row])
+				_ = max
+			}
+		}
 	}
+	return 0
 }
 
-func PersonBox(p Person, row, col int) dom.Node {
+func PersonBox(p *Person, row, col int, spouse bool) dom.Node {
 	name := xdom.Span()
 	name.SetClass("name")
 	xjs.SetInnerText(name, p.FirstName+" "+p.Surname)
 	d := xdom.Div()
-	xjs.AppendChildren(d, name)
-	d.SetClass("person sex_" + string(p.Gender))
 	style := d.Style()
 	style.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
 	style.SetProperty("left", strconv.Itoa(colStart+col*colGap)+"px", "")
+	class := "person sex_" + string(p.Gender)
+	if p.ID == focusID {
+		class += " chosen"
+	} else if len(p.SpouseOfIDs) > 0 {
+		collapseExpand := xdom.Div()
+		if p.Expand && !spouse {
+			collapseExpand.SetClass("collapse")
+		}
+		d.AppendChild(collapseExpand)
+		d.AddEventListener("click", true, expandCollapse(p, !p.Expand, spouse))
+		class += " clicky"
+		if p.ID == selectedID {
+			class += " selected"
+		}
+	}
+	d.SetClass(class)
+	d.AppendChild(name)
 	return d
+}
+
+func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
+	if spouse {
+		return func(dom.Event) {
+			focusID = p.ID
+			p.Expand = true
+			DrawTree()
+		}
+	} else {
+		return func(dom.Event) {
+			selectedID = p.ID
+			p.Expand = expand
+			DrawTree()
+		}
+	}
 }
 
 func Marriage(row, start, end int) dom.Node {
