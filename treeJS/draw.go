@@ -195,13 +195,13 @@ func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
 		return func(dom.Event) {
 			focusID = p.ID
 			p.Expand = true
-			DrawTree()
+			go DrawTree()
 		}
 	} else {
 		return func(dom.Event) {
 			selectedID = p.ID
 			p.Expand = expand
-			DrawTree()
+			go DrawTree()
 		}
 	}
 }
