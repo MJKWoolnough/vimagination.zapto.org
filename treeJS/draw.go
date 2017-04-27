@@ -41,9 +41,12 @@ func DrawTree(scroll bool) {
 	PersonBox(topFam.Husband(), 0, 0, false)
 	PersonBox(topFam.Wife(), 0, 1, true)
 	Marriage(0, 0, 1)
-	DownLeft(0, 1)
+	DownLeft(0, 1, 1)
+	NewBox(0)
 
-	NewChildren(topFam, nil, 1).Draw()
+	var tree Children
+	tree.Init(topFam, &Spouse{Box: NewBox(0)}, 1)
+	tree.Draw()
 
 	xjs.RemoveChildren(xjs.Body())
 	xjs.AppendChildren(xjs.Body(), lines)
@@ -52,7 +55,8 @@ func DrawTree(scroll bool) {
 	rows.Reset()
 
 	if scroll {
-		js.Global.Call("scrollTo", chosenX-xjs.Body().Get("clientWidth").Int()/2, chosenY-xjs.Body().Get("clientHeight").Int()/2)
+		do := js.Global.Get("document").Get("documentElement")
+		js.Global.Call("scrollTo", chosenX-do.Get("clientWidth").Int()/2, chosenY-do.Get("clientHeight").Int()/2)
 	}
 }
 
@@ -126,12 +130,13 @@ func Marriage(row, start, end int) {
 	lines.AppendChild(d)
 }
 
-func DownLeft(row, col int) {
+func DownLeft(row, start, end int) {
 	downLeft := xdom.Div()
 	downLeft.SetClass("downLeft")
 	s := downLeft.Style()
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
-	s.SetProperty("left", strconv.Itoa(colStart+col*rowGap-125)+"px", "")
+	s.SetProperty("left", strconv.Itoa(colStart+start*rowGap-125)+"px", "")
+	s.SetProperty("width", strconv.Itoa((end-start)*colGap+100)+"px", "")
 	lines.AppendChild(downLeft)
 }
 
