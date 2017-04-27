@@ -33,7 +33,7 @@ func main() {
 				return
 			}
 			focusID = uint(fID)
-			me := RPC.GetPerson(uint(focusID))
+			me := GetPerson(uint(focusID))
 			me.Expand = true
 			DrawTree()
 		}()
