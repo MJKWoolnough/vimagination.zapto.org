@@ -23,7 +23,7 @@
 					<span class="name">{{.ChildOf.Wife.FirstName}} {{.ChildOf.Wife.Surname}}</span>
 				{{if ne .ChildOf.Wife.ID 0}}</a>{{end}}
 			</div>
-			<div class="downLeft row_1" style="left: 125px; width: 100px; height: 100px;"></div>
+			<div class="downLeft row_1" style="left: 125px; width: 100px;"></div>
 			<div class="downLeft" style="left: 125px; top: 200px; width: 0px; height: 85px;"></div>
 			{{$numSpouses := len .SpouseOf | uint}}
 			{{if ne $numSpouses 0}}
@@ -44,7 +44,7 @@
 						</div>
 					{{end}}
 					{{if .Children}}
-				<div class="downLeft row_2" style="left: {{sub $pos 125}}px; width: 100px; height: 100px;"></div>
+				<div class="downLeft row_2" style="left: {{sub $pos 125}}px; width: 100px;"></div>
 				<div class="downLeft" style="left: {{sub $pos 125}}px; top: 400px; width: 0px; height: 85px;"></div>
 					{{end}}
 					{{range $c, $child := .Children}}

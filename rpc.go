@@ -16,6 +16,7 @@ type RPC struct{}
 type RPCPerson struct {
 	ID                 uint
 	FirstName, Surname string
+	DOB, DOD           string
 	Gender             byte
 	ChildOf            uint
 	SpouseOf           []uint
@@ -29,6 +30,8 @@ func (RPC) GetPerson(id uint, person *RPCPerson) error {
 	person.ID = p.ID
 	person.FirstName = p.FirstName
 	person.Surname = p.Surname
+	person.DOB = p.DOB
+	person.DOD = p.DOD
 	switch p.Gender {
 	case 'M':
 		person.Gender = 'M'

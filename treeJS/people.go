@@ -3,6 +3,7 @@ package main
 type Person struct {
 	ID                 uint
 	FirstName, Surname string
+	DOB, DOD           string
 	Gender             byte
 	ChildOfID          uint   `json:"ChildOf"`
 	SpouseOfIDs        []uint `json:"SpouseOf"`

@@ -63,7 +63,7 @@ func DrawTree(scroll bool) {
 const (
 	rowStart = 100
 	colStart = 50
-	rowGap   = 200
+	rowGap   = 150
 	colGap   = 200
 	boxWidth = 150
 )
@@ -71,9 +71,6 @@ const (
 var chosenX, chosenY int
 
 func PersonBox(p *Person, row, col int, spouse bool) {
-	name := xdom.Span()
-	name.SetClass("name")
-	xjs.SetInnerText(name, p.FirstName+" "+p.Surname)
 	d := xdom.Div()
 	style := d.Style()
 	y, x := rowStart+row*rowGap, colStart+col*colGap
@@ -101,8 +98,23 @@ func PersonBox(p *Person, row, col int, spouse bool) {
 		d.AddEventListener("click", true, expandCollapse(p, !p.Expand, spouse))
 		class += " clicky"
 	}
-	d.SetClass(class)
+	name := xdom.Div()
+	name.SetClass("name")
+	xjs.SetInnerText(name, p.FirstName+" "+p.Surname)
 	d.AppendChild(name)
+	if p.DOB != "" {
+		dob := xdom.Div()
+		xjs.SetInnerText(dob, "DOB: "+p.DOB)
+		dob.SetClass("dob")
+		d.AppendChild(dob)
+	}
+	if p.DOD != "" {
+		dod := xdom.Div()
+		xjs.SetInnerText(dod, "DOD: "+p.DOD)
+		dod.SetClass("dod")
+		d.AppendChild(dod)
+	}
+	d.SetClass(class)
 	boxes.AppendChild(d)
 }
 
@@ -135,7 +147,7 @@ func DownLeft(row, start, end int) {
 	downLeft.SetClass("downLeft")
 	s := downLeft.Style()
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
-	s.SetProperty("left", strconv.Itoa(colStart+start*rowGap-125)+"px", "")
+	s.SetProperty("left", strconv.Itoa(colStart+start*colGap-125)+"px", "")
 	s.SetProperty("width", strconv.Itoa((end-start)*colGap+100)+"px", "")
 	lines.AppendChild(downLeft)
 }
@@ -145,7 +157,7 @@ func DownRight(row, col int) {
 	downRight.SetClass("downRight")
 	s := downRight.Style()
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
-	s.SetProperty("left", strconv.Itoa(colStart+col*rowGap-25)+"px", "")
+	s.SetProperty("left", strconv.Itoa(colStart+col*colGap-25)+"px", "")
 	lines.AppendChild(downRight)
 }
 
@@ -153,10 +165,10 @@ func SiblingUp(row, col int) {
 	down := xdom.Div()
 	down.SetClass("downLeft")
 	t := down.Style()
-	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-115)+"px", "")
-	t.SetProperty("left", strconv.Itoa(colStart+col*rowGap+75)+"px", "")
+	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-50)+"px", "")
+	t.SetProperty("left", strconv.Itoa(colStart+col*colGap+75)+"px", "")
 	t.SetProperty("width", "0px", "")
-	t.SetProperty("height", "100px", "")
+	t.SetProperty("height", "50px", "")
 	lines.AppendChild(down)
 }
 
@@ -164,8 +176,8 @@ func SiblingLine(row, start, end int) {
 	down := xdom.Div()
 	down.SetClass("downLeft")
 	t := down.Style()
-	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-115)+"px", "")
-	t.SetProperty("left", strconv.Itoa(colStart+start*rowGap+75)+"px", "")
+	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-50)+"px", "")
+	t.SetProperty("left", strconv.Itoa(colStart+start*colGap+75)+"px", "")
 	t.SetProperty("width", strconv.Itoa((end-start)*colGap)+"px", "")
 	t.SetProperty("height", "0px", "")
 	lines.AppendChild(down)
