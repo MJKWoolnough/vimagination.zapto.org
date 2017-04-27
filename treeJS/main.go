@@ -36,7 +36,6 @@ func main() {
 				xjs.Alert("RPC initialisation failed: %s", err)
 				return
 			}
-			expandAll = v.Get("expandAll") != ""
 			if e := v.Get("highlight"); e != "" {
 				ids := strings.Split(e, ",")
 				for _, id := range ids {
@@ -51,7 +50,10 @@ func main() {
 			}
 			focusID = uint(fID)
 			me := GetPerson(uint(focusID))
-			me.Expand = true
+			if me.ID != 0 {
+				expandAll = v.Get("expandAll") != ""
+				me.Expand = true
+			}
 			DrawTree(true)
 		}()
 	})
