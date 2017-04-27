@@ -7,6 +7,7 @@ import (
 
 	"github.com/MJKWoolnough/gopherjs/xdom"
 	"github.com/MJKWoolnough/gopherjs/xjs"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 var (
@@ -14,7 +15,7 @@ var (
 	lines, boxes dom.Node
 )
 
-func DrawTree() {
+func DrawTree(scroll bool) {
 	top := GetPerson(focusID)
 	for {
 		f := top.ChildOf()
@@ -49,6 +50,10 @@ func DrawTree() {
 	xjs.AppendChildren(xjs.Body(), boxes)
 
 	rows.Reset()
+
+	if scroll {
+		js.Global.Call("scrollTo", chosenX-xjs.Body().Get("clientWidth").Int()/2, chosenY-xjs.Body().Get("clientHeight").Int()/2)
+	}
 }
 
 const (
@@ -59,23 +64,28 @@ const (
 	boxWidth = 150
 )
 
+var chosenX, chosenY int
+
 func PersonBox(p *Person, row, col int, spouse bool) {
 	name := xdom.Span()
 	name.SetClass("name")
 	xjs.SetInnerText(name, p.FirstName+" "+p.Surname)
 	d := xdom.Div()
 	style := d.Style()
-	style.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
-	style.SetProperty("left", strconv.Itoa(colStart+col*colGap)+"px", "")
+	y, x := rowStart+row*rowGap, colStart+col*colGap
+	style.SetProperty("top", strconv.Itoa(y)+"px", "")
+	style.SetProperty("left", strconv.Itoa(x)+"px", "")
 	class := "person sex_" + string(p.Gender)
 	if p.ID == focusID {
-		class += " chosen"
-	} else if len(p.SpouseOfIDs) > 0 {
+		d.SetID("chosen")
+		chosenX, chosenY = x, y
+	}
+	if len(p.SpouseOfIDs) > 0 {
 		collapseExpand := xdom.Div()
-		if p.Expand {
-			collapseExpand.SetClass("collapse")
-		} else {
+		if !p.Expand || spouse {
 			collapseExpand.SetClass("expand")
+		} else {
+			collapseExpand.SetClass("collapse")
 		}
 		d.AppendChild(collapseExpand)
 		d.AddEventListener("click", true, expandCollapse(p, !p.Expand, spouse))
@@ -94,13 +104,13 @@ func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
 		return func(dom.Event) {
 			focusID = p.ID
 			p.Expand = true
-			go DrawTree()
+			go DrawTree(true)
 		}
 	}
 	return func(dom.Event) {
 		selectedID = p.ID
 		p.Expand = expand
-		go DrawTree()
+		go DrawTree(false)
 	}
 }
 
