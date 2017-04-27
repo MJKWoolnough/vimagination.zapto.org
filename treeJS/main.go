@@ -13,6 +13,7 @@ import (
 var (
 	focusID   uint
 	highlight = []uint{}
+	expandAll bool
 )
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 				xjs.Alert("RPC initialisation failed: %s", err)
 				return
 			}
+			expandAll = v.Get("expandAll") != ""
 			if e := v.Get("highlight"); e != "" {
 				ids := strings.Split(e, ",")
 				for _, id := range ids {

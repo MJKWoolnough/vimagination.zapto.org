@@ -14,6 +14,9 @@ func GetPerson(id uint) *Person {
 		return p
 	}
 	p := RPC.GetPerson(id)
+	if expandAll {
+		p.Expand = true
+	}
 	personCache[id] = &p
 	return &p
 }
