@@ -106,6 +106,8 @@ func SetupGedcomData(filename string) error {
 		Wife:    unknownPerson,
 	}
 	unknownPerson.ChildOf = unknownFamily
+	GedcomData.People[0] = unknownPerson
+	GedcomData.Families[0] = unknownFamily
 	for _, indi := range ps {
 		person := GedcomData.People[idToUint(indi.ID)]
 		if len(indi.PersonalNameStructure) > 0 {

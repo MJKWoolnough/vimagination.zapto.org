@@ -62,7 +62,7 @@ func (t *Tree) HTML(w http.ResponseWriter, r *http.Request) {
 	form.Parse(&tv, r.Form)
 	person := GedcomData.People[tv.ID]
 	if person == nil {
-		person = GedcomData.People[1]
+		person = GedcomData.People[0]
 	}
 	t.HTMLTemplate.Execute(w, personHelpers{person})
 }

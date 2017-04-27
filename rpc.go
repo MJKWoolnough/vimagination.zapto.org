@@ -3,7 +3,6 @@ package main
 import (
 	"net/rpc/jsonrpc"
 
-	"github.com/MJKWoolnough/errors"
 	"golang.org/x/net/websocket"
 )
 
@@ -25,7 +24,7 @@ type RPCPerson struct {
 func (RPC) GetPerson(id uint, person *RPCPerson) error {
 	p, ok := GedcomData.People[id]
 	if !ok {
-		return errors.Error("unknown id")
+		p = GedcomData.People[0]
 	}
 	person.ID = p.ID
 	person.FirstName = p.FirstName
@@ -56,7 +55,7 @@ type RPCFamily struct {
 func (RPC) GetFamily(id uint, family *RPCFamily) error {
 	f, ok := GedcomData.Families[id]
 	if !ok {
-		return errors.Error("unknown id")
+		f = GedcomData.Families[0]
 	}
 	family.Husband = f.Husband.ID
 	family.Wife = f.Wife.ID
