@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	rows         Rows
+	rows         = new(Rows)
 	lines, boxes dom.Node
 )
 
@@ -27,16 +27,22 @@ func DrawTree() {
 			break
 		}
 	}
+	topFam := top.ChildOf()
+	if len(topFam.ChildrenIDs) == 0 {
+		topFam = &Family{
+			ChildrenIDs: []uint{top.ID},
+		}
+	}
+
 	lines = xdom.DocumentFragment()
 	boxes = xdom.DocumentFragment()
-	topFam := top.ChildOf()
-	boxes.AppendChild(PersonBox(topFam.Husband(), 0, 0, false))
-	boxes.AppendChild(PersonBox(topFam.Wife(), 0, 1, true))
-	lines.AppendChild(Marriage(0, 0, 1))
-	lines.AppendChild(DownLeft(0, 1))
 
-	tree := NewChildren(topFam, nil, 0)
-	_ = tree
+	PersonBox(topFam.Husband(), 0, 0, false)
+	PersonBox(topFam.Wife(), 0, 1, true)
+	Marriage(0, 0, 1)
+	DownLeft(0, 1)
+
+	NewChildren(topFam, nil, 1).Draw()
 
 	xjs.RemoveChildren(xjs.Body())
 	xjs.AppendChildren(xjs.Body(), lines)
@@ -53,7 +59,7 @@ const (
 	boxWidth = 150
 )
 
-func PersonBox(p *Person, row, col int, spouse bool) dom.Node {
+func PersonBox(p *Person, row, col int, spouse bool) {
 	name := xdom.Span()
 	name.SetClass("name")
 	xjs.SetInnerText(name, p.FirstName+" "+p.Surname)
@@ -66,8 +72,10 @@ func PersonBox(p *Person, row, col int, spouse bool) dom.Node {
 		class += " chosen"
 	} else if len(p.SpouseOfIDs) > 0 {
 		collapseExpand := xdom.Div()
-		if p.Expand && !spouse {
+		if p.Expand {
 			collapseExpand.SetClass("collapse")
+		} else {
+			collapseExpand.SetClass("expand")
 		}
 		d.AppendChild(collapseExpand)
 		d.AddEventListener("click", true, expandCollapse(p, !p.Expand, spouse))
@@ -78,7 +86,7 @@ func PersonBox(p *Person, row, col int, spouse bool) dom.Node {
 	}
 	d.SetClass(class)
 	d.AppendChild(name)
-	return d
+	boxes.AppendChild(d)
 }
 
 func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
@@ -88,77 +96,60 @@ func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
 			p.Expand = true
 			go DrawTree()
 		}
-	} else {
-		return func(dom.Event) {
-			selectedID = p.ID
-			p.Expand = expand
-			go DrawTree()
-		}
+	}
+	return func(dom.Event) {
+		selectedID = p.ID
+		p.Expand = expand
+		go DrawTree()
 	}
 }
 
-func Marriage(row, start, end int) dom.Node {
+func Marriage(row, start, end int) {
 	d := xdom.Div()
 	d.SetClass("spouseLine")
 	s := d.Style()
 	s.SetProperty("left", strconv.Itoa(colStart+start*colGap)+"px", "")
 	s.SetProperty("width", strconv.Itoa((end-start)*colGap)+"px", "")
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
-	return d
+	lines.AppendChild(d)
 }
 
-func DownLeft(row, col int) dom.Node {
-	frag := xdom.DocumentFragment()
+func DownLeft(row, col int) {
 	downLeft := xdom.Div()
 	downLeft.SetClass("downLeft")
 	s := downLeft.Style()
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
 	s.SetProperty("left", strconv.Itoa(colStart+col*rowGap-125)+"px", "")
-	frag.AppendChild(downLeft)
-	down := xdom.Div()
-	down.SetClass("downLeft")
-	t := down.Style()
-	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap+85)+"px", "")
-	t.SetProperty("left", strconv.Itoa(colStart+col*rowGap-125)+"px", "")
-	t.SetProperty("width", "0px", "")
-	t.SetProperty("height", "100px", "")
-	frag.AppendChild(down)
-	return frag
+	lines.AppendChild(downLeft)
 }
 
-func DownRight(row, col int) dom.Node {
-	frag := xdom.DocumentFragment()
+func DownRight(row, col int) {
 	downRight := xdom.Div()
 	downRight.SetClass("downRight")
 	s := downRight.Style()
 	s.SetProperty("top", strconv.Itoa(rowStart+row*rowGap)+"px", "")
 	s.SetProperty("left", strconv.Itoa(colStart+col*rowGap-25)+"px", "")
-	frag.AppendChild(downRight)
+	lines.AppendChild(downRight)
+}
+
+func SiblingUp(row, col int) {
 	down := xdom.Div()
 	down.SetClass("downLeft")
 	t := down.Style()
-	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap+85)+"px", "")
-	t.SetProperty("left", strconv.Itoa(colStart+col*rowGap-25)+"px", "")
+	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-115)+"px", "")
+	t.SetProperty("left", strconv.Itoa(colStart+col*rowGap+75)+"px", "")
 	t.SetProperty("width", "0px", "")
 	t.SetProperty("height", "100px", "")
-	frag.AppendChild(down)
-	return frag
+	lines.AppendChild(down)
 }
 
-func SiblingStart(row, start, end int) dom.Node {
-	return xdom.DocumentFragment()
-}
-
-func Siblings(row, start, end int) dom.Node {
-	frag := xdom.DocumentFragment()
-	top := strconv.Itoa(rowStart+row*rowGap-85) + "px"
-	for i := start; i < end; i++ {
-		d := xdom.Div()
-		d.SetClass("upLeft")
-		s := d.Style()
-		s.SetProperty("left", strconv.Itoa(colStart+i*colGap)+"px", "")
-		s.SetProperty("top", top, "")
-		frag.AppendChild(d)
-	}
-	return frag
+func SiblingLine(row, start, end int) {
+	down := xdom.Div()
+	down.SetClass("downLeft")
+	t := down.Style()
+	t.SetProperty("top", strconv.Itoa(rowStart+row*rowGap-115)+"px", "")
+	t.SetProperty("left", strconv.Itoa(colStart+start*rowGap+75)+"px", "")
+	t.SetProperty("width", strconv.Itoa((end-start)*colGap)+"px", "")
+	t.SetProperty("height", "0px", "")
+	lines.AppendChild(down)
 }
