@@ -23,7 +23,7 @@ func (r *Rows) SetRow(row, col int) {
 
 func (r *Rows) size(row int) {
 	for len(*r) <= row {
-		*r = append(*r, make(Rows, row+1-len(*r))...)
+		*r = append(*r, 0)
 	}
 }
 
