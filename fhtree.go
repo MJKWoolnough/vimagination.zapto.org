@@ -62,19 +62,7 @@ func (t *Tree) HTML(w http.ResponseWriter, r *http.Request) {
 	form.Parse(&tv, r.Form)
 	person := GedcomData.People[tv.ID]
 	if person == nil {
-		return
+		person = GedcomData.People[1]
 	}
 	t.HTMLTemplate.Execute(w, personHelpers{person})
-}
-
-func (t *Tree) JS(w http.ResponseWriter, r *http.Request) {
-	var tv TreeVars
-	r.ParseForm()
-	form.Parse(&tv, r.Form)
-	w.Header().Set("Content-Type", "text/javascript")
-	person := GedcomData.People[tv.ID]
-	if person == nil {
-		return
-	}
-	t.JSTemplate.Execute(w, person)
 }
