@@ -25,8 +25,7 @@ func main() {
 			}
 			fID, err := strconv.ParseUint(v.Get("id"), 10, 64)
 			if err != nil {
-				xjs.Alert("Failed to get ID: %s", err)
-				return
+				fID = 1
 			}
 			if err := InitRPC(); err != nil {
 				xjs.Alert("RPC initialisation failed: %s", err)
