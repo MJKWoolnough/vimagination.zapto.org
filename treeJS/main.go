@@ -3,13 +3,17 @@ package main
 import (
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/MJKWoolnough/gopherjs/xjs"
 	"github.com/gopherjs/gopherjs/js"
 	"honnef.co/go/js/dom"
 )
 
-var selectedID, focusID uint
+var (
+	focusID   uint
+	highlight = []uint{}
+)
 
 func main() {
 	dom.GetWindow().AddEventListener("load", false, func(dom.Event) {
@@ -31,10 +35,22 @@ func main() {
 				xjs.Alert("RPC initialisation failed: %s", err)
 				return
 			}
+			if e := v.Get("highlight"); e != "" {
+				ids := strings.Split(e, ",")
+				for _, id := range ids {
+					uid, err := strconv.ParseUint(id, 10, 64)
+					if err != nil {
+						continue
+					}
+					p := GetPerson(uint(uid))
+					p.Expand = true
+					highlight = append(highlight, uint(uid))
+				}
+			}
 			focusID = uint(fID)
 			me := GetPerson(uint(focusID))
 			me.Expand = true
-			DrawTree()
+			DrawTree(true)
 		}()
 	})
 }

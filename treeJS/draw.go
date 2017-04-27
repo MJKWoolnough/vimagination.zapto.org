@@ -80,6 +80,12 @@ func PersonBox(p *Person, row, col int, spouse bool) {
 		d.SetID("chosen")
 		chosenX, chosenY = x, y
 	}
+	for _, h := range highlight {
+		if p.ID == h {
+			class += " highlight"
+			break
+		}
+	}
 	if len(p.SpouseOfIDs) > 0 {
 		collapseExpand := xdom.Div()
 		if !p.Expand || spouse {
@@ -90,9 +96,6 @@ func PersonBox(p *Person, row, col int, spouse bool) {
 		d.AppendChild(collapseExpand)
 		d.AddEventListener("click", true, expandCollapse(p, !p.Expand, spouse))
 		class += " clicky"
-		if p.ID == selectedID {
-			class += " selected"
-		}
 	}
 	d.SetClass(class)
 	d.AppendChild(name)
@@ -108,7 +111,6 @@ func expandCollapse(p *Person, expand, spouse bool) func(dom.Event) {
 		}
 	}
 	return func(dom.Event) {
-		selectedID = p.ID
 		p.Expand = expand
 		go DrawTree(false)
 	}
