@@ -5,49 +5,34 @@ import (
 )
 
 const (
-	relParent relationship = iota
-	relChild
-	relSibling
-	relMarriage
+	relParent relationship = false
+	relChild  relationship = true
 )
 
-type relationship uint8
-
-func (r relationship) Reverse() relationship {
-	switch r {
-	case relParent:
-		return relChild
-	case relChild:
-		return relParent
-	default:
-		return r
-	}
-}
-
-type Calculator map[uint]*person
+type relationship bool
 
 type person struct {
-	id, side uint
-	from     *person
+	*Person
+	side *Person
+	from *personData
 }
 
 type personData struct {
-	Gender             byte
+	*Person
 	RelationshipToNext relationship
-	ID                 uint
-	FName, LName       string
 }
 
-type links struct {
+type Links struct {
 	Route    []personData
-	Up, Diff int
+	Up, Down int
+	Half     bool
 }
 
-func (l *links) String() string {
+func (l *Links) String() string {
 	return l.Route[0].FName + " " + l.Route[0].LName + " is the " + l.Relationship() + " of " + l.Route[len(l.Route)-1].FName + " " + l.Route[len(l.Route)-1].LName
 }
 
-func (l *links) Relationship() string {
+func (l *Links) Relationship() string {
 	diff := l.Diff
 	if diff < 0 {
 		diff = -diff
@@ -74,85 +59,42 @@ func ordinal(num int) string {
 	}
 }
 
-func GetParents(id uint) (uint, uint) {
-	p, ok := GedcomData.People[id]
-	if !ok {
-		return 0, 0
-	}
-	var mother, father uint
-	if p.ChildOf != nil {
-		if p.ChildOf.Wife != nil {
-			mother = p.ChildOf.Wife.ID
-		}
-		if p.ChildOf.Husband != nil {
-			father = p.ChildOf.Husband.ID
-		}
-	}
-	return mother, father
-}
-
-func (c Calculator) findDirectRelationship(fid, sid uint) (*links, error) {
-	tf := make([]person, 2, 1024)
-	tf[0] = person{fid, fid, nil}
-	tf[1] = person{sid, sid, nil}
+func Calculate(first, second *Person) *Links {
+	toFind := make([]*person, 2, 1024)
+	toFind[0] = &person{first, first, nil}
+	toFind[1] = &person{second, second, nil}
+	cache := make(map[uint]*person)
+	cache[first.ID] = toFind[0]
+	cache[second.ID] = toFind[1]
+	var parents [2]*Person
 	for len(tf) > 0 {
-		p := tf[0]
-		tf = tf[1:]
-		mother, father := GetParents(p.id)
-		for _, pid := range [2]uint{mother, father} {
-			if pid == 0 {
+		p := toFind[0]
+		toFind = toFind[1:]
+		parents[0] = p.ChildOf.Husband
+		parents[1] = p.ChildOf.Wife
+		for _, next := range parents {
+			if next.ID == 0 {
 				continue
 			}
-			if got, ok := c[pid]; ok {
+			np := &person{next, p.side, p}
+			if got, ok := cache[next.ID]; ok {
 				if got.side == p.side {
 					continue
 				}
-				var first, second *person
-				if got.side == fid {
-					first = got
-					second = &p
-				} else {
-					first = &p
-					second = got
+				if got.side == first {
+					return makeLinks(got, np)
 				}
-				var data []personData
-				cf, err := c.followRouteDown(first, &data)
-				if err != nil {
-					return nil, err
-				}
-				reverse(data)
-				cs, err := c.followRouteDown(second, &data)
-				if err != nil {
-					return nil, err
-				}
-				diff := cf - cs
-				if cs > cf {
-					cs, cf = cf, cs
-				}
-				return &links{data, cs - 2, diff}, nil
+				return makeLinks(np, got)
 			}
-			tf = append(tf, person{pid, p.side, &p})
-			c[pid] = &tf[len(tf)-1]
+			toFind = append(toFind, np)
+			cache[np.ID] = np
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-func (c Calculator) followRouteDown(from *person, data *[]personData) (int, error) {
-	count := 0
-	for ; from != nil; from = from.from {
-		var fname, lname, sex string
-		//fill data
-		*data = append(*data, personData{
-			ID:                 from.id,
-			FName:              fname,
-			LName:              lname,
-			Gender:             sex[0],
-			RelationshipToNext: relParent,
-		})
-		count++
-	}
-	return count, nil
+func makeLinks(first, second *person) Links {
+	return Links{}
 }
 
 func reverse(data []personData) {
