@@ -101,14 +101,12 @@ func reverse(data []personData) {
 	ld := len(data)
 	for i := 0; i < ld>>1; i++ {
 		j := ld - i - 1
-		data[i].FName, data[j].FName = data[j].FName, data[i].FName
-		data[i].LName, data[j].LName = data[j].LName, data[i].LName
-		data[i].Gender, data[j].Gender = data[j].Gender, data[i].Gender
-		data[i].ID, data[j].ID = data[j].ID, data[i].ID
-		data[i].RelationshipToNext, data[j].RelationshipToNext = data[j].RelationshipToNext.Reverse(), data[i].RelationshipToNext.Reverse()
+		data[i], data[j] = data[j], data[i]
+		data[i].RelationshipToNext = !data[i].RelationshipToNext
+		data[j].RelationshipToNext = !data[j].RelationshipToNext
 	}
 	if ld&1 == 1 {
 		pos := ld>>1 - 1
-		data[pos].RelationshipToNext = data[pos].RelationshipToNext.Reverse()
+		data[pos].RelationshipToNext = !data[pos].RelationshipToNext
 	}
 }
