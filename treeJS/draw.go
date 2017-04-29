@@ -42,10 +42,12 @@ func DrawTree(scroll bool) {
 	PersonBox(topFam.Wife(), 0, 1, true)
 	Marriage(0, 0, 1)
 	DownLeft(0, 1, 1)
-	NewBox(0)
+	(&Box{}).Init(0)
 
 	var tree Children
-	tree.Init(topFam, &Spouse{Box: NewBox(0)}, 1)
+	s := new(Spouse)
+	s.Box.Init(0)
+	tree.Init(topFam, s, 1)
 	tree.Draw()
 
 	xjs.RemoveChildren(xjs.Body())

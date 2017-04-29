@@ -35,11 +35,9 @@ type Box struct {
 	Row, Col int
 }
 
-func NewBox(row int) Box {
-	return Box{
-		Row: row,
-		Col: rows.RowPP(row),
-	}
+func (b *Box) Init(row int) {
+	b.Row = row
+	b.Col = rows.RowPP(row)
 }
 
 func (b *Box) FirstEmpty() {
@@ -108,7 +106,7 @@ type Child struct {
 func (c *Child) Init(p *Person, siblings *Children, row int) {
 	c.Siblings = siblings
 	c.Person = p
-	c.Box = NewBox(row)
+	c.Box.Init(row)
 	if p.Expand {
 		c.Spouses.Init(p.SpouseOf(), c, row)
 	}
@@ -122,10 +120,10 @@ func (c *Child) LastX() int {
 }
 
 func (c *Child) Shift(diff int) bool {
-	if !c.Spouses.Shift(diff) {
-		return false
-	}
 	if len(c.Spouses.Spouses) > 0 {
+		if !c.Spouses.Shift(diff) {
+			return false
+		}
 		c.SetCol(c.Spouses.Spouses[0].Col - 1)
 	} else {
 		c.AddCol(diff)
@@ -186,7 +184,7 @@ type Spouse struct {
 func (s *Spouse) Init(f *Family, p *Person, spouses *Spouses, row int) {
 	s.Spouses = spouses
 	s.Person = p
-	s.Box = NewBox(row)
+	s.Box.Init(row)
 	s.Children.Init(f, s, row+1)
 	if len(f.ChildrenIDs) > 0 {
 		firstChildPos := s.Children.Children[0].Col
@@ -197,14 +195,11 @@ func (s *Spouse) Init(f *Family, p *Person, spouses *Spouses, row int) {
 }
 
 func (s *Spouse) Shift(diff int) bool {
-	if !s.Children.Shift(diff) {
-		return false
+	if len(s.Children.Children) > 0 {
+		s.Children.Shift(diff)
 	}
-	if len(s.Children.Children) > 0 && s.Children.Children[0].Col > s.Col {
-		s.AddCol(diff)
-		return true
-	}
-	return false
+	s.AddCol(diff)
+	return true
 }
 
 func (s *Spouse) Draw() {
