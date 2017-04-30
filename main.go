@@ -79,9 +79,12 @@ func main() {
 		Err:      ec,
 	})
 
-	http.Handle("/FH/list.html", &List{
-		Template: template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
-	})
+	list := &List{
+		ListTemplate:     template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
+		RelationTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "relation.html.tmpl"))),
+	}
+	http.Handle("/FH/list.html", http.HandlerFunc(list.List))
+	http.Handle("/FH/calc.html", http.HandlerFunc(list.Calculator))
 	tree := &Tree{
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 	}

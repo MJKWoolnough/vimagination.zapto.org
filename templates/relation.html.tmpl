@@ -1,0 +1,59 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Jaki Woolnough's Family Tree</title>
+		<link rel="icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="shortcut icon" href="/FH/images/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" type="text/css" media="screen" title="Default Style" href="/FH/styles/2010/calculator.css" />
+		<!--[if IE]><style>body { behavior:url("/FH/styles/csshover.htc"); }</style><![endif]-->
+	</head>
+	<body>
+		<div id="site-header">
+			<h1>Jaki Woolnough's Family Tree</h1>
+		</div>
+		<div id="menu-container">
+			<ul id="menu">
+				<li>
+					<a href="/FH/index.html" title="Home" tabindex="1">Home</a>
+				</li>
+				<li>
+					<a href="/FH/memoirs.html" title="Memoirs" tabindex="2">Memoirs</a>
+				</li>
+				<li>
+					<a href="/FH/origins.html" title="Name Origins" tabindex="3">Name Origins</a>
+				</li>
+				<li>
+					<a href="/FH/photos.html" title="Photos &amp; Documents" tabindex="4">Photos &amp; Documents</a>
+				</li>
+				<li>
+					<a href="/FH/list.html" title="View the Family Tree" tabindex="5">View the Family Tree</a>
+				</li>
+				<li>
+					<a href="/FH/contact.html" title="Email Me" tabindex="6">Email Me</a>
+				</li>
+				<li>
+					<a href="/FH/acknowledgements.html" title="Acknowledgements" tabindex="7">Acknowledgements</a>
+				</li>
+			</ul>
+		</div>
+		<div id="contentblock">
+			{{$top := .}}
+			{{if .Found}}
+			<h2>{{.First.FirstName}} {{.First.Surname}} is the {{.Links.Relationship}} of {{.Second.FirstName}} {{.Second.Surname}}</h2>
+			<div class="link"><a href="tree.html?id={{.First.ID}}&amp;highlight={{range $n, $person := .Links.Route}}{{if ne $n 0}},{{end}}{{.ID}}{{end}}">See in the Tree</a></div>
+			<div class="links">
+				{{range $n, $person := .Links.Route}}
+					{{$person.FirstName}} {{$person.Surname}}{{if eq .ID $top.Second.ID}}.{{else}}{{if ne $n 0}}, who{{end}} is the
+					{{if lt $n $top.Links.Up}}
+						{{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}}
+					{{else}}
+						{{if eq $person.Gender 'M'}}Father{{else if eq $person.Gender 'F'}}Mother{{else}}Parent{{end}}
+					{{end}}
+					 of {{end}}
+				{{end}}
+			</div>
+			{{else}}
+			<h2>No relationship found between {{.First.FirstName}} {{.First.Surname}} and {{.Second.FirstName}} {{.Second.Surname}}</h2>
+			{{end}}
+		</div>
+	</body>
+</html>
