@@ -218,20 +218,12 @@ window.addEventListener("load", function() {
 	boxWidth = 150,
 	chosenX = 0,
 	chosenY = 0,
-	gender = function(g) {
-		if (g === genderMale) {
-			return "M";
-		} else if (g === genderFemale) {
-			return "F";
-		}
-		return "U";
-	},
 	personBox = function(person, row, col, spouse) {
 		var d = createElement("div"),
 		    style = d.style,
 		    y = rowStart + row * rowGap,
 		    x = colStart + col * colGap,
-		    className = "person sex_" + gender(person.Gender),
+		    className = "person sex_" + String.fromCharCode(person.Gender),
 		    name = createElement("div");
 		style.setProperty("top", y + "px");
 		style.setProperty("left", x + "px");
