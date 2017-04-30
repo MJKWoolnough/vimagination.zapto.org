@@ -36,20 +36,28 @@
 			</ul>
 		</div>
 		<div id="contentblock">
-			<h2>Select a Name</h2>
-			<div id="letters"><a href="?letter=A">A</a>|<a href="?letter=B">B</a>|<a href="?letter=C">C</a>|<a href="?letter=D">D</a>|<a href="?letter=E">E</a>|<a href="?letter=F">F</a>|<a href="?letter=G">G</a>|<a href="?letter=H">H</a>|<a href="?letter=I">I</a>|<a href="?letter=J">J</a>|<a href="?letter=K">K</a>|<a href="?letter=L">L</a>|<a href="?letter=M">M</a>|<a href="?letter=N">N</a>|<a href="?letter=O">O</a>|<a href="?letter=P">P</a>|<a href="?letter=Q">Q</a>|<a href="?letter=R">R</a>|<a href="?letter=S">S</a>|<a href="?letter=T">T</a>|<a href="?letter=U">U</a>|<a href="?letter=V">V</a>|<a href="?letter=W">W</a>|<a href="?letter=X">X</a>|<a href="?letter=Y">Y</a>|<a href="?letter=Z">Z</a></div>
+			{{$top := .}}
+			<h2>Select {{if .Calc}}the {{if eq .First 0}}first{{else}}second{{end}} person for the calculator{{else}}a Name{{end}}</h2>
+			<div id="letters">
+				{{range $n, $letter := .Letters}}{{if ne $n 0}}|{{end}}<a href="?letter={{$letter}}{{if ne $top.First 0}}&amp;first={{$top.First}}{{end}}">{{$letter}}</a>{{end}}
+			</div>
 			<form action="?" method="post">
 				<label for="search">Search Terms</label>
-				<input type="text" name="query" id="search" value="{{.Query}}" />
+				<input type="text" name="query" id="search" value="{{.Query}}" />{{if gt .First 0}}
+				<input type="hidden" name="first" value="{{.First}}" />{{end}}
 				<input type="submit" value="Search" />
 			</form>
 			{{if .HasRows}}
 			{{.Pagination}}
+			{{if .Calc}}
+			<form action="?" method="post">{{if ne .First 0}}
+			<input type="hidden" name="first" value="{{.First}}" />{{end}}
+			{{end}}
 			<ul id="results">
 			{{range .Rows}}
 				{{$me := .}}
 				<li class="result">
-					<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a></div>
+					<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>{{if $top.Calc}}{{if ne $top.First .ID}}<button type="submit" name="chosen" value="{{.ID}}">Choose</button>{{end}}{{end}}</div>
 					<div class="links">
 						{{if ne .ChildOf.Husband.ID 0}}
 						<div class="link"><a href="tree.html?id={{.ChildOf.Husband.ID}}">{{.ChildOf.Husband.FirstName}} {{.ChildOf.Husband.Surname}}</a>(Father)</div>
@@ -77,6 +85,9 @@
 				</li>
 			{{end}}
 			</ul>
+			{{if .Calc}}
+			</form>
+			{{end}}
 			{{.Pagination}}
 			{{else}}
 			<div>
