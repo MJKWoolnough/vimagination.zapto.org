@@ -39,9 +39,6 @@ window.addEventListener("load", function() {
 			case 1006:
 				document.body.setInnerText("The server unexpectedly closed the connection - this may be an error.");
 				break;
-			case 4000:
-				document.body.setInnerText("The server closed the connection due to another session opening.");
-				break;
 			default:
 				document.body.setInnerText("Lost Connection To Server! Code: " + event.code);
 			}
