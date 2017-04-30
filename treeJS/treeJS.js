@@ -140,7 +140,31 @@ window.addEventListener("load", function() {
 			Children: []
 		    }),
 		    personCache = [unknownPerson],
-		    familyCache = [unknownFamily];
+		    familyCache = [unknownFamily],
+		    loadPerson = function(id, callback) {
+			var pc = personCache[id];
+			if (typeof pc !== "undefined") {
+				callback(pc);
+				return;
+			}
+			rpc.getPerson(id, function(person) {
+				var p = new Person(person);
+				personCache[id] = p;
+				callback(p);
+			});
+		    },
+		    loadFamily = function(id, callback) {
+			var fc = familyCache[id];
+			if (typeof fc !== "undefined") {
+				callback(fc);
+				return;
+			}
+			rpc.getFamily(id, function(family) {
+				var f = new Family(family);
+				familyCache[id] = f;
+				callback(f);
+			});
+		    };
 		this.getPerson = function(id) {
 			var pc = personCache[id];
 			if (typeof pc !== "undefined") {
@@ -155,55 +179,31 @@ window.addEventListener("load", function() {
 			}
 			return unknownFamily;
 		};
-		this.loadPerson = function(id, callback) {
-			var pc = personCache[id];
-			if (typeof pc !== "undefined") {
-				callback(pc);
-				return;
-			}
-			rpc.getPerson(id, function(person) {
-				var p = new Person(person);
-				personCache[id] = p;
-				callback(p);
-			});
-		};
-		this.loadFamily = function(id, callback) {
-			var fc = familyCache[id];
-			if (typeof fc !== "undefined") {
-				callback(fc);
-				return;
-			}
-			rpc.getFamily(id, function(family) {
-				var f = new Family(family);
-				familyCache[id] = f;
-				callback(f);
-			});
-		};
 		this.expandPerson = function(id, callback) {
-			cache.loadPerson(id, function(person) {
+			loadPerson(id, function(person) {
 				var wg = new waitGroup(callback),
 				    wgDone = wg.done.bind(wg),
 				    familyLoader = function(family) {
 					if (family.Husband != 0) {
 						wg.add(1);
-						cache.loadPerson(family.Husband, wgDone);
+						loadPerson(family.Husband, wgDone);
 					}
 					if (family.Wife != 0) {
 						wg.add(1);
-						cache.loadPerson(family.Wife, wgDone);
+						loadPerson(family.Wife, wgDone);
 					}
 					if (family.Children.length > 0) {
 						wg.add(family.Children.length);
 						for(var i = 0; i < family.Children.length; i++) {
-							cache.loadPerson(family.Children[i], wgDone);
+							loadPerson(family.Children[i], wgDone);
 						}
 					}
 					wg.done();
 				};
 				wg.add(1 + person.SpouseOf.length);
-				cache.loadFamily(person.ChildOf, familyLoader);
+				loadFamily(person.ChildOf, familyLoader);
 				for (var i = 0; i < person.SpouseOf.length; i++) {
-					cache.loadFamily(person.SpouseOf[i], familyLoader);
+					loadFamily(person.SpouseOf[i], familyLoader);
 				}
 			});
 		}
