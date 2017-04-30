@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"github.com/MJKWoolnough/form"
 	"github.com/MJKWoolnough/pagination"
@@ -39,28 +40,52 @@ func (i *IndexVars) ParserList() form.ParserList {
 }
 
 type List struct {
-	Template *template.Template
+	ListTemplate     *template.Template
+	RelationTemplate *template.Template
 }
 
-func (l *List) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (l *List) List(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	l.serveList(w, r, false, 0)
+}
+
+type IndexTemplateVars struct {
+	IndexVars
+	HasRows    bool
+	Rows       Index
+	Pagination template.HTML
+	Calc       bool
+	First      uint
+}
+
+var letters = [26]string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+
+func (IndexTemplateVars) Letters() [26]string {
+	return letters
+}
+
+func (l *List) serveList(w http.ResponseWriter, r *http.Request, calc bool, first uint) {
 	const perPage = 20
 	var iv IndexVars
-	r.ParseForm()
 	form.Parse(&iv, r.Form)
 	var (
-		urlBase        string
 		index          Index
 		paginationHTML template.HTML
 	)
+	urlBase := "?"
 	if iv.Query != "" {
 		iv.Letter = 0
 		// store/restore with session storage???
 		index = GedcomData.Search(iv.Query)
-		urlBase = "?query=" + template.HTMLEscapeString(iv.Query) + "&amp;page="
+		urlBase += "query=" + template.HTMLEscapeString(iv.Query) + "&amp;"
 	} else if iv.Letter > 0 {
 		index = GedcomData.Indexes[iv.Letter-1]
-		urlBase = "?letter=" + string([]byte{iv.Letter + 'A' - 1}) + "&amp;page="
+		urlBase += "letter=" + string([]byte{iv.Letter + 'A' - 1}) + "&amp;"
 	}
+	if first > 0 {
+		urlBase += "first=" + strconv.FormatUint(uint64(first), 10) + "&amp;"
+	}
+	urlBase += "&amp;page="
 	if iv.Page != 0 {
 		iv.Page--
 	}
@@ -85,17 +110,14 @@ func (l *List) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		paginationHTML = template.HTML(pagination.New().Get(iv.Page, numPages).HTML(urlBase))
 	}
-	tv := struct {
-		IndexVars
-		HasRows    bool
-		Rows       Index
-		Pagination template.HTML
-	}{
+	tv := IndexTemplateVars{
 		iv,
 		index != nil,
 		index,
 		paginationHTML,
+		calc,
+		first,
 	}
 
-	l.Template.Execute(w, tv)
+	l.ListTemplate.Execute(w, tv)
 }
