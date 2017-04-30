@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/MJKWoolnough/gedcom"
 )
@@ -45,6 +46,9 @@ type gedcomData struct {
 	People   map[uint]*Person
 	Families map[uint]*Family
 	Indexes  [26]Index
+
+	sync.RWMutex
+	RelationshipCache map[[2]uint]*Links
 }
 
 var GedcomData gedcomData
@@ -74,6 +78,7 @@ func SetupGedcomData(filename string) error {
 	defer f.Close()
 	GedcomData.People = make(map[uint]*Person)
 	GedcomData.Families = make(map[uint]*Family)
+	GedcomData.RelationshipCache = make(map[[2]uint]*Links)
 	ps := make([]*gedcom.Individual, 0, 1024)
 	fs := make([]*gedcom.Family, 0, 1024)
 	r := gedcom.NewReader(f, gedcom.AllowMissingRequired, gedcom.IgnoreInvalidValue, gedcom.AllowUnknownCharset, gedcom.AllowTerminatorsInValue, gedcom.AllowWrongLength, gedcom.AllowInvalidEscape, gedcom.AllowInvalidChars)
@@ -109,7 +114,11 @@ func SetupGedcomData(filename string) error {
 	GedcomData.People[0] = unknownPerson
 	GedcomData.Families[0] = unknownFamily
 	for _, indi := range ps {
-		person := GedcomData.People[idToUint(indi.ID)]
+		id := idToUint(indi.ID)
+		if id == 0 {
+			continue
+		}
+		person := GedcomData.People[id]
 		if len(indi.PersonalNameStructure) > 0 {
 			name := strings.Split(string(indi.PersonalNameStructure[0].NamePersonal), "/")
 			if indi.Death.Date == "" {
@@ -153,7 +162,11 @@ func SetupGedcomData(filename string) error {
 		}
 	}
 	for _, fam := range fs {
-		family := GedcomData.Families[idToUint(fam.ID)]
+		id := idToUint(fam.ID)
+		if id == 0 {
+			continue
+		}
+		family := GedcomData.Families[id]
 		family.Husband = GedcomData.People[idToUint(fam.Husband)]
 		if family.Husband == nil {
 			family.Husband = unknownPerson
