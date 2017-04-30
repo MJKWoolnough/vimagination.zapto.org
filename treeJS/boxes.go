@@ -40,12 +40,6 @@ func (b *Box) Init(row int) {
 	b.Col = rows.RowPP(row)
 }
 
-func (b *Box) FirstEmpty() {
-	if b.Col < rows.GetRow(b.Row) {
-		b.Col = rows.RowPP(b.Row)
-	}
-}
-
 func (b *Box) SetCol(col int) {
 	b.Col = col
 	if col >= rows.GetRow(b.Row) {
@@ -195,11 +189,12 @@ func (s *Spouse) Init(f *Family, p *Person, spouses *Spouses, row int) {
 }
 
 func (s *Spouse) Shift(diff int) bool {
+	all := true
 	if len(s.Children.Children) > 0 {
-		s.Children.Shift(diff)
+		all = s.Children.Shift(diff)
 	}
 	s.AddCol(diff)
-	return true
+	return all
 }
 
 func (s *Spouse) Draw() {
