@@ -4,41 +4,41 @@ import (
 	"strconv"
 )
 
-const (
-	relParent relationship = false
-	relChild  relationship = true
-)
-
-type relationship bool
-
 type person struct {
 	*Person
 	side *Person
-	from *personData
-}
-
-type personData struct {
-	*Person
-	RelationshipToNext relationship
+	from *person
 }
 
 type Links struct {
-	Route    []personData
+	Route    []*Person
 	Up, Down int
 	Half     bool
 }
 
-func (l *Links) String() string {
-	return l.Route[0].FName + " " + l.Route[0].LName + " is the " + l.Relationship() + " of " + l.Route[len(l.Route)-1].FName + " " + l.Route[len(l.Route)-1].LName
-}
-
 func (l *Links) Relationship() string {
-	diff := l.Diff
+	diff := l.Up - l.Down
 	if diff < 0 {
 		diff = -diff
 	}
+	big := l.Up
+	if l.Down > l.Up {
+		big = l.Down
+	}
 	diff++
-	return strconv.Itoa(l.Up) + ordinal(l.Up) + " cousin, " + strconv.Itoa(diff) + " times removed"
+	return strconv.Itoa(big) + ordinal(big) + " cousin, " + strconv.Itoa(diff) + " times removed"
+}
+
+func (l *Links) Reverse() *Links {
+	route := make([]*Person, len(l.Route))
+	copy(route, l.Route)
+	reverse(route)
+	return &Links{
+		Route: route,
+		Down:  l.Up,
+		Up:    l.Down,
+		Half:  l.Half,
+	}
 }
 
 func ordinal(num int) string {
@@ -67,7 +67,7 @@ func Calculate(first, second *Person) *Links {
 	cache[first.ID] = toFind[0]
 	cache[second.ID] = toFind[1]
 	var parents [2]*Person
-	for len(tf) > 0 {
+	for len(toFind) > 0 {
 		p := toFind[0]
 		toFind = toFind[1:]
 		parents[0] = p.ChildOf.Husband
@@ -93,20 +93,49 @@ func Calculate(first, second *Person) *Links {
 	return nil
 }
 
-func makeLinks(first, second *person) Links {
-	return Links{}
+func makeLinks(first, second *person) *Links {
+	var (
+		up, down int
+		half     bool
+		p        *person
+	)
+
+	route := make([]*Person, 0, 32)
+
+	p = first
+	for {
+		route = append(route, p.Person)
+		if p.Person == p.side {
+			break
+		}
+		p = p.from
+		up++
+	}
+
+	reverse(route)
+
+	p = second
+	for {
+		if p.Person == p.side {
+			break
+		}
+		p = p.from
+		route = append(route, p.Person)
+		down++
+	}
+
+	return &Links{
+		Route: route,
+		Up:    up,
+		Down:  down,
+		Half:  half,
+	}
 }
 
-func reverse(data []personData) {
+func reverse(data []*Person) {
 	ld := len(data)
 	for i := 0; i < ld>>1; i++ {
 		j := ld - i - 1
 		data[i], data[j] = data[j], data[i]
-		data[i].RelationshipToNext = !data[i].RelationshipToNext
-		data[j].RelationshipToNext = !data[j].RelationshipToNext
-	}
-	if ld&1 == 1 {
-		pos := ld>>1 - 1
-		data[pos].RelationshipToNext = !data[pos].RelationshipToNext
 	}
 }
