@@ -62,10 +62,8 @@ window.addEventListener("load", function() {
 		var ns = document.getElementsByTagName("html")[0].namespaceURI;
 		return document.createElementNS.bind(document, ns);
 	}()),
-	wgID = 0,
 	waitGroup = function(callback) {
 		var state = 0;
-		var ID = wgID++;
 		this.add = function(amount) {
 			amount = amount || 1;
 			state += amount;
