@@ -49,45 +49,41 @@
 			</form>
 			{{if .HasRows}}
 			{{.Pagination}}
-			{{if .Calc}}
-			<form action="?" method="post">{{if ne .First 0}}
-			<input type="hidden" name="first" value="{{.First}}" />{{end}}
-			{{end}}
-			<ul id="results">
-			{{range .Rows}}
-				{{$me := .}}
-				<li class="result">
-					<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>{{if $top.Calc}}{{if ne $top.First .ID}}<button type="submit" name="chosen" value="{{.ID}}">Choose</button>{{end}}{{end}}</div>
-					<div class="links">
-						{{if ne .ChildOf.Husband.ID 0}}
-						<div class="link"><a href="tree.html?id={{.ChildOf.Husband.ID}}">{{.ChildOf.Husband.FirstName}} {{.ChildOf.Husband.Surname}}</a>(Father)</div>
-						{{end}}
-						{{if ne .ChildOf.Wife.ID 0}}
-						<div class="link"><a href="tree.html?id={{.ChildOf.Wife.ID}}">{{.ChildOf.Wife.FirstName}} {{.ChildOf.Wife.Surname}}</a>(Mother)</div>
-						{{end}}
-						{{range .ChildOf.Children}}
-							{{if and (ne .ID 0) (ne .ID $me.ID)}}
-						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>({{if eq .Gender 'F'}}Sister{{else if eq .Gender 'M'}}Brother{{else}}Sibling{{end}})</div>
+			<form action="calc.html" method="post">{{if ne .First 0}}
+				<input type="hidden" name="first" value="{{.First}}" />{{end}}
+				<ul id="results">
+				{{range .Rows}}
+					{{$me := .}}
+					<li class="result">
+						<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>{{if ne $top.First .ID}}<button type="submit" name="chosen" value="{{.ID}}">-&gt;</button>{{end}}</div>
+						<div class="links">
+							{{if ne .ChildOf.Husband.ID 0}}
+							<div class="link"><a href="tree.html?id={{.ChildOf.Husband.ID}}">{{.ChildOf.Husband.FirstName}} {{.ChildOf.Husband.Surname}}</a>(Father)</div>
 							{{end}}
-						{{end}}
-						{{range .SpouseOf}}
-							{{if and (ne .Husband.ID 0) (ne .Husband.ID $me.ID)}}
-						<div class="link"><a href="tree.html?id={{.Husband.ID}}">{{.Husband.FirstName}} {{.Husband.Surname}}</a>(Husband)</div>
+							{{if ne .ChildOf.Wife.ID 0}}
+							<div class="link"><a href="tree.html?id={{.ChildOf.Wife.ID}}">{{.ChildOf.Wife.FirstName}} {{.ChildOf.Wife.Surname}}</a>(Mother)</div>
 							{{end}}
-							{{if and (ne .Wife.ID 0) (ne .Wife.ID $me.ID)}}
-						<div class="link"><a href="tree.html?id={{.Wife.ID}}">{{.Wife.FirstName}} {{.Wife.Surname}}</a>(Wife)</div>
+							{{range .ChildOf.Children}}
+								{{if and (ne .ID 0) (ne .ID $me.ID)}}
+							<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>({{if eq .Gender 'F'}}Sister{{else if eq .Gender 'M'}}Brother{{else}}Sibling{{end}})</div>
+								{{end}}
 							{{end}}
-							{{range .Children}}
-						<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>({{if eq .Gender 'F'}}Daughter{{else if eq .Gender 'M'}}Son{{else}}Child{{end}})</div>
+							{{range .SpouseOf}}
+								{{if and (ne .Husband.ID 0) (ne .Husband.ID $me.ID)}}
+							<div class="link"><a href="tree.html?id={{.Husband.ID}}">{{.Husband.FirstName}} {{.Husband.Surname}}</a>(Husband)</div>
+								{{end}}
+								{{if and (ne .Wife.ID 0) (ne .Wife.ID $me.ID)}}
+							<div class="link"><a href="tree.html?id={{.Wife.ID}}">{{.Wife.FirstName}} {{.Wife.Surname}}</a>(Wife)</div>
+								{{end}}
+								{{range .Children}}
+							<div class="link"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>({{if eq .Gender 'F'}}Daughter{{else if eq .Gender 'M'}}Son{{else}}Child{{end}})</div>
+								{{end}}
 							{{end}}
-						{{end}}
-					</div>
-				</li>
-			{{end}}
-			</ul>
-			{{if .Calc}}
+						</div>
+					</li>
+				{{end}}
+				</ul>
 			</form>
-			{{end}}
 			{{.Pagination}}
 			{{else}}
 			<div>
