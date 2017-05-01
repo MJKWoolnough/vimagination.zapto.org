@@ -48,7 +48,7 @@ type gedcomData struct {
 	Indexes  [26]Index
 
 	sync.RWMutex
-	RelationshipCache map[[2]uint]*Links
+	RelationshipCache map[[2]uint]Links
 }
 
 var GedcomData gedcomData
@@ -78,7 +78,7 @@ func SetupGedcomData(filename string) error {
 	defer f.Close()
 	GedcomData.People = make(map[uint]*Person)
 	GedcomData.Families = make(map[uint]*Family)
-	GedcomData.RelationshipCache = make(map[[2]uint]*Links)
+	GedcomData.RelationshipCache = make(map[[2]uint]Links)
 	ps := make([]*gedcom.Individual, 0, 1024)
 	fs := make([]*gedcom.Family, 0, 1024)
 	r := gedcom.NewReader(f, gedcom.AllowMissingRequired, gedcom.IgnoreInvalidValue, gedcom.AllowUnknownCharset, gedcom.AllowTerminatorsInValue, gedcom.AllowWrongLength, gedcom.AllowInvalidEscape, gedcom.AllowInvalidChars)

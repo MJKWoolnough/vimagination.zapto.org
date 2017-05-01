@@ -11,34 +11,23 @@ type person struct {
 }
 
 type Links struct {
-	Route    []*Person
-	Up, Down int
-	Half     bool
+	First, Second []*Person
+	Common        *Person
 }
 
-func (l *Links) Relationship() string {
-	diff := l.Up - l.Down
+func (l Links) Relationship() string {
+	up := len(l.First)
+	down := len(l.Second)
+	diff := up - down
 	if diff < 0 {
 		diff = -diff
 	}
-	big := l.Up
-	if l.Down > l.Up {
-		big = l.Down
+	big := up
+	if down > up {
+		big = down
 	}
 	diff++
 	return strconv.Itoa(big) + ordinal(big) + " cousin, " + strconv.Itoa(diff) + " times removed"
-}
-
-func (l *Links) Reverse() *Links {
-	route := make([]*Person, len(l.Route))
-	copy(route, l.Route)
-	reverse(route)
-	return &Links{
-		Route: route,
-		Down:  l.Up,
-		Up:    l.Down,
-		Half:  l.Half,
-	}
 }
 
 func ordinal(num int) string {
@@ -59,7 +48,7 @@ func ordinal(num int) string {
 	}
 }
 
-func Calculate(first, second *Person) *Links {
+func Calculate(first, second *Person) Links {
 	toFind := make([]*person, 2, 1024)
 	toFind[0] = &person{first, first, nil}
 	toFind[1] = &person{second, second, nil}
@@ -76,60 +65,42 @@ func Calculate(first, second *Person) *Links {
 			if next.ID == 0 {
 				continue
 			}
-			np := &person{next, p.side, p}
 			if got, ok := cache[next.ID]; ok {
 				if got.side == p.side {
 					continue
 				}
 				if got.side == first {
-					return makeLinks(got, np)
+					return Links{
+						First:  makeRoute(got.from),
+						Second: makeRoute(p),
+						Common: got.Person,
+					}
 				}
-				return makeLinks(np, got)
+				return Links{
+					First:  makeRoute(p),
+					Second: makeRoute(got.from),
+					Common: got.Person,
+				}
 			}
+			np := &person{next, p.side, p}
 			toFind = append(toFind, np)
 			cache[np.ID] = np
 		}
 	}
-	return nil
+	return Links{}
 }
 
-func makeLinks(first, second *person) *Links {
-	var (
-		up, down int
-		half     bool
-		p        *person
-	)
-
+func makeRoute(p *person) []*Person {
 	route := make([]*Person, 0, 32)
-
-	p = first
 	for {
 		route = append(route, p.Person)
 		if p.Person == p.side {
 			break
 		}
 		p = p.from
-		up++
 	}
-
 	reverse(route)
-
-	p = second
-	for {
-		if p.Person == p.side {
-			break
-		}
-		p = p.from
-		route = append(route, p.Person)
-		down++
-	}
-
-	return &Links{
-		Route: route,
-		Up:    up,
-		Down:  down,
-		Half:  half,
-	}
+	return route
 }
 
 func reverse(data []*Person) {

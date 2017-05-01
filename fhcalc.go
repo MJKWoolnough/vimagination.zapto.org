@@ -20,7 +20,7 @@ func (c *CalcVars) ParserList() form.ParserList {
 
 type CalcTemplateVars struct {
 	Found         bool
-	Links         *Links
+	Links         Links
 	First, Second *Person
 }
 
@@ -51,7 +51,11 @@ func (l *List) Calculator(w http.ResponseWriter, r *http.Request) {
 		l.serveList(w, r, true, cv.Chosen+cv.First)
 		return
 	}
-
+	var reverse bool
+	if first.ID > second.ID {
+		reverse = true
+		first, second = second, first
+	}
 	key := [2]uint{first.ID, second.ID}
 	GedcomData.RWMutex.RLock()
 	links, ok := GedcomData.RelationshipCache[key]
@@ -59,13 +63,15 @@ func (l *List) Calculator(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		links = Calculate(first, second)
 		GedcomData.RWMutex.Lock()
-		rev := links.Reverse()
 		GedcomData.RelationshipCache[key] = links
-		GedcomData.RelationshipCache[[2]uint{second.ID, first.ID}] = rev
 		GedcomData.RWMutex.Unlock()
 	}
+	if reverse {
+		first, second = second, first
+		links.First, links.Second = links.Second, links.First
+	}
 	ctv := CalcTemplateVars{
-		Found:  links != nil,
+		Found:  links.Common != nil,
 		Links:  links,
 		First:  first,
 		Second: second,

@@ -39,10 +39,32 @@
 			{{$top := .}}
 			{{if .Found}}
 			<h2>{{.First.FirstName}} {{.First.Surname}} is the {{.Links.Relationship}} of {{.Second.FirstName}} {{.Second.Surname}}</h2>
-			<div class="link"><a href="tree.html?id={{.First.ID}}&amp;highlight={{range $n, $person := .Links.Route}}{{if ne $n 0}},{{end}}{{.ID}}{{end}}">See in the Tree</a></div>
-			<ul class="links">
-{{range $n, $person := .Links.Route}}				<li>{{$person.FirstName}} {{$person.Surname}}{{if eq .ID $top.Second.ID}}.{{else}}{{if ne $n 0}}, who{{end}} is the {{if lt $n $top.Links.Up}}{{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}}{{else}}{{if eq $person.Gender 'M'}}Father{{else if eq $person.Gender 'F'}}Mother{{else}}Parent{{end}}{{end}} of&hellip;{{end}}</li>
-{{end}}			</ul>
+			<div class="link"><a href="tree.html?id={{.First.ID}}&amp;highlight={{.Links.Common.ID}}{{range $n, $person := .Links.First}},{{.ID}}{{end}}{{range $n, $person := .Links.Second}},{{.ID}}{{end}}">See in the Tree</a></div>
+			<table class="route">
+				<tr>
+					<th>
+						<h3>Route from {{.First.FirstName}} {{.First.Surname}}</h3>
+					</th>
+					<th>
+						<h3>Route from {{.Second.FirstName}} {{.Second.Surname}}</h3>
+					</th>
+				</tr>
+				<tr>
+					<td>
+						<ul>
+{{range $n, $person := .Links.First}}							<li>{{$person.FirstName}} {{$person.Surname}}, who is the {{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}} of&hellip;</li>
+{{end}}						</ul>
+					</td>
+					<td>
+						<ul>
+{{range $n, $person := .Links.Second}}							<li>{{$person.FirstName}} {{$person.Surname}}, who is the {{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}} of&hellip;</li>
+{{end}}						</ul>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2"><div>{{.Links.Common.FirstName}} {{.Links.Common.Surname}}</div><h3>Common Ancestor</h3></td>
+				</td>
+			</table>
 			{{else}}
 			<h2>No relationship found between {{.First.FirstName}} {{.First.Surname}} and {{.Second.FirstName}} {{.Second.Surname}}</h2>
 			{{end}}
