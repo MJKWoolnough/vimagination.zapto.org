@@ -40,17 +40,9 @@
 			{{if .Found}}
 			<h2>{{.First.FirstName}} {{.First.Surname}} is the {{.Links.Relationship}} of {{.Second.FirstName}} {{.Second.Surname}}</h2>
 			<div class="link"><a href="tree.html?id={{.First.ID}}&amp;highlight={{range $n, $person := .Links.Route}}{{if ne $n 0}},{{end}}{{.ID}}{{end}}">See in the Tree</a></div>
-			<div class="links">
-				{{range $n, $person := .Links.Route}}
-					{{$person.FirstName}} {{$person.Surname}}{{if eq .ID $top.Second.ID}}.{{else}}{{if ne $n 0}}, who{{end}} is the
-					{{if lt $n $top.Links.Up}}
-						{{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}}
-					{{else}}
-						{{if eq $person.Gender 'M'}}Father{{else if eq $person.Gender 'F'}}Mother{{else}}Parent{{end}}
-					{{end}}
-					 of {{end}}
-				{{end}}
-			</div>
+			<ul class="links">
+{{range $n, $person := .Links.Route}}				<li>{{$person.FirstName}} {{$person.Surname}}{{if eq .ID $top.Second.ID}}.{{else}}{{if ne $n 0}}, who{{end}} is the {{if lt $n $top.Links.Up}}{{if eq $person.Gender 'M'}}Son{{else if eq $person.Gender 'F'}}Daughter{{else}}Child{{end}}{{else}}{{if eq $person.Gender 'M'}}Father{{else if eq $person.Gender 'F'}}Mother{{else}}Parent{{end}}{{end}} of&hellip;{{end}}</li>
+{{end}}			</ul>
 			{{else}}
 			<h2>No relationship found between {{.First.FirstName}} {{.First.Surname}} and {{.Second.FirstName}} {{.Second.Surname}}</h2>
 			{{end}}
