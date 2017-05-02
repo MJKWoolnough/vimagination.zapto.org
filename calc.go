@@ -104,7 +104,7 @@ func (l Links) Relationship() string {
 				small = up - 1
 				diff = down - up
 			}
-			relationship += strconv.Itoa(small) + ordinal(small) + " cousin"
+			relationship += strconv.Itoa(small) + ordinal(small) + " Cousin"
 			if diff > 0 {
 				relationship += ", " + removed(diff) + " removed,"
 			}
