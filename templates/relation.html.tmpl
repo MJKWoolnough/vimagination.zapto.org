@@ -39,7 +39,11 @@
 			{{$top := .}}
 			{{if .Found}}
 			<h2>{{.First.FirstName}} {{.First.Surname}} is the {{.Links.Relationship}} of {{.Second.FirstName}} {{.Second.Surname}}</h2>
-			<div class="link"><a href="tree.html?id={{.First.ID}}&amp;highlight={{.Links.Common.ID}}{{range $n, $person := .Links.First}},{{.ID}}{{end}}{{range $n, $person := .Links.Second}},{{.ID}}{{end}}">See in the Tree</a></div>
+			<form action="?" method="post">
+				<input type="hidden" name="first" value="{{.Second.ID}}" />
+				<input type="hidden" name="chosen" value="{{.First.ID}}" />
+				<div style="text-align: center"><input type="submit" value="Swap" /></div>
+			</form>
 			<table class="route">
 				<tr>
 					<th>
@@ -62,7 +66,11 @@
 					</td>
 				</tr>
 				<tr>
-					<td colspan="2"><div>{{.Links.Common.FirstName}} {{.Links.Common.Surname}}</div><h3>Common Ancestor</h3></td>
+					<td colspan="2">
+						<div>{{.Links.Common.FirstName}} {{.Links.Common.Surname}}</div>
+						<h3>Common Ancestor</h3>
+						<div class="link"><a href="tree.html?id={{.Links.Common.ID}}&amp;highlight={{.Links.Common.ID}}{{range $n, $person := .Links.First}},{{.ID}}{{end}}{{range $n, $person := .Links.Second}},{{.ID}}{{end}}">See in the Tree</a></div>
+					</td>
 				</td>
 			</table>
 			{{else}}
