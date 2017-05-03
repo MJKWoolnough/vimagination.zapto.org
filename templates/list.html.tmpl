@@ -55,7 +55,7 @@
 				{{range .Rows}}
 					{{$me := .}}
 					<li class="result">
-						<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>{{if ne $top.First .ID}}<button type="submit" name="chosen" value="{{.ID}}">-&gt;</button>{{end}}</div>
+						<div class="name"><a href="tree.html?id={{.ID}}">{{.FirstName}} {{.Surname}}</a>{{if ne $top.First .ID}}<button type="submit" name="chosen" value="{{.ID}}">+</button>{{end}}</div>
 						<div class="links">
 							{{if ne .ChildOf.Husband.ID 0}}
 							<div class="link"><a href="tree.html?id={{.ChildOf.Husband.ID}}">{{.ChildOf.Husband.FirstName}} {{.ChildOf.Husband.Surname}}</a>(Father)</div>
