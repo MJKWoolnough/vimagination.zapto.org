@@ -32,7 +32,12 @@ func (l Links) Relationship() string {
 			return "Clone"
 		case 1:
 		default:
-			relationship = strings.Repeat("Great-", down-2) + "Grand-"
+			greats := down - 2
+			if greats > 3 {
+				relationship = strconv.Itoa(greats) + " x Great-Grand-"
+			} else {
+				relationship = strings.Repeat("Great-", greats) + "Grand-"
+			}
 		}
 		switch l.Common.Gender {
 		case 'M':
@@ -63,7 +68,12 @@ func (l Links) Relationship() string {
 				relationship += "Sibling"
 			}
 		default:
-			relationship += strings.Repeat("Great-", down-2)
+			greats := down - 2
+			if greats > 3 {
+				relationship += strconv.Itoa(greats) + " x Great-"
+			} else {
+				relationship += strings.Repeat("Great-", greats)
+			}
 			switch l.First[0].Gender {
 			case 'M':
 				relationship += "Uncle"
@@ -76,7 +86,12 @@ func (l Links) Relationship() string {
 	default:
 		switch down {
 		case 0:
-			relationship = strings.Repeat("Great-", up-2) + "Grand-"
+			greats := up - 2
+			if greats > 3 {
+				relationship = strconv.Itoa(greats) + " x Great-Grand-"
+			} else {
+				relationship = strings.Repeat("Great-", greats) + "Grand-"
+			}
 			switch l.First[0].Gender {
 			case 'M':
 				relationship += "Son"
@@ -86,7 +101,12 @@ func (l Links) Relationship() string {
 				relationship += "Child"
 			}
 		case 1:
-			relationship += strings.Repeat("Great-", up-2)
+			greats := up - 2
+			if greats > 3 {
+				relationship += strconv.Itoa(greats) + " x Great-Grand-"
+			} else {
+				relationship += strings.Repeat("Great-", greats) + "Grand-"
+			}
 			switch l.First[0].Gender {
 			case 'M':
 				relationship += "Nephew"
