@@ -14,6 +14,8 @@ import (
 
 	"golang.org/x/net/websocket"
 
+	"github.com/MJKWoolnough/httpgzip"
+	"github.com/MJKWoolnough/httplog"
 	"github.com/MJKWoolnough/webserver/contact"
 	"github.com/MJKWoolnough/webserver/proxy/client"
 )
@@ -91,8 +93,33 @@ func main() {
 
 	http.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
 	http.Handle("/FH/rpc", websocket.Handler(rpcHandler))
+	http.Handle(httpgzip.FileServer(http.Dir(*fileRoot)))
 
-	http.Handle("/", http.FileServer(http.Dir(*filesDir)))
+	var (
+		lFile  *os.File
+		server = &http.Server{
+			Handler:  http.DefaultServeMux,
+			ErrorLog: logger,
+		}
+	)
+	if *logFile != "" {
+		var err error
+		lFile, err = os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			logger.Printf("Error appending to log file: %s\n", err)
+		} else {
+			lr, err := httplog.NewWriteLogger(lFile, httplog.DefaultFormat)
+			if err != nil {
+				logger.Fatalf("error starting request logging: %s\n", err)
+			}
+			server.Handler = httplog.Wrap(http.DefaultServeMux, lr)
+		}
+
+	}
+
+	if err := client.Setup(server); err != nil {
+		logger.Fatalf("error setting up server: %s\n", err)
+	}
 
 	cc := make(chan struct{})
 	go func() {
@@ -112,6 +139,9 @@ func main() {
 	}()
 
 	err := client.Run()
+	if lFile != nil {
+		lFile.Close()
+	}
 
 	select {
 	case <-cc:
