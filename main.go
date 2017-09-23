@@ -24,6 +24,7 @@ var (
 	gedcomFile  = flag.String("g", "./tree.ged", "GEDCOM file")
 	templateDir = flag.String("t", "./templates", "template directory")
 	filesDir    = flag.String("f", "./files", "files directory")
+	logFile     = flag.String("l", "", "file for request logging")
 	logName     = flag.String("n", "", "name for logging")
 	logger      *log.Logger
 )
@@ -93,7 +94,7 @@ func main() {
 
 	http.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
 	http.Handle("/FH/rpc", websocket.Handler(rpcHandler))
-	http.Handle(httpgzip.FileServer(http.Dir(*fileRoot)))
+	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir)))
 
 	var (
 		lFile  *os.File
