@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/net/websocket"
 
+	"github.com/MJKWoolnough/httpbuffer"
 	"github.com/MJKWoolnough/httpgzip"
 	"github.com/MJKWoolnough/httplog"
 	"github.com/MJKWoolnough/webserver/contact"
@@ -73,7 +74,8 @@ func main() {
 			logger.Println(<-ec)
 		}
 	}()
-	http.Handle("/FH/contact.html", &contact.Contact{
+	fh := new(http.ServeMux)
+	fh.Handle("/FH/contact.html", &contact.Contact{
 		Template: tmpl,
 		From:     from,
 		To:       to,
@@ -86,13 +88,14 @@ func main() {
 		ListTemplate:     template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
 		RelationTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "relation.html.tmpl"))),
 	}
-	http.Handle("/FH/list.html", http.HandlerFunc(list.List))
-	http.Handle("/FH/calc.html", http.HandlerFunc(list.Calculator))
+	fh.Handle("/FH/list.html", http.HandlerFunc(list.List))
+	fh.Handle("/FH/calc.html", http.HandlerFunc(list.Calculator))
 	tree := &Tree{
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 	}
 
-	http.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
+	fh.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
+	http.Handle("/FH/", &httpbuffer.Handler{fh, true})
 	http.Handle("/FH/rpc", websocket.Handler(rpcHandler))
 	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir)))
 
