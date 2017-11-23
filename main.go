@@ -15,6 +15,8 @@ import (
 	"golang.org/x/net/websocket"
 
 	"github.com/MJKWoolnough/httpbuffer"
+	_ "github.com/MJKWoolnough/httpbuffer/deflate"
+	_ "github.com/MJKWoolnough/httpbuffer/gzip"
 	"github.com/MJKWoolnough/httpgzip"
 	"github.com/MJKWoolnough/httplog"
 	"github.com/MJKWoolnough/webserver/contact"
@@ -120,7 +122,6 @@ func main() {
 		}
 
 	}
-
 	if err := client.Setup(server); err != nil {
 		logger.Fatalf("error setting up server: %s\n", err)
 	}
