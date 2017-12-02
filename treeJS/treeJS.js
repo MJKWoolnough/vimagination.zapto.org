@@ -391,6 +391,8 @@ window.addEventListener("load", function() {
 								return false;
 							}
 						}
+					} else {
+						return false; // hack, need to start a minimum box
 					}
 				}
 				return true;
