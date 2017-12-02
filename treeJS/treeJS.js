@@ -425,13 +425,11 @@ window.addEventListener("load", function() {
 			},
 			shift: function(diff) {
 				if (this.spouses.spouses.length > 0) {
-					if (!this.spouses.shift(diff)) {
-						return false;
-					}
+					var ret = !this.spouses.shift(diff);
 					this.box.setCol(this.spouses.spouses[0].box.col - 1);
-				} else {
-					this.box.addCol(diff);
+					return ret;
 				}
+				this.box.addCol(diff);
 				return true;
 			},
 			draw: function() {
