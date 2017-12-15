@@ -76,28 +76,26 @@ func main() {
 			logger.Println(<-ec)
 		}
 	}()
-	fh := new(http.ServeMux)
-	fh.Handle("/FH/contact.html", &contact.Contact{
+	http.Handle("/FH/contact.html", httpbuffer.Handler{&contact.Contact{
 		Template: tmpl,
 		From:     from,
 		To:       to,
 		Host:     addr,
 		Auth:     smtp.PlainAuth("", username, password, addrMPort),
 		Err:      ec,
-	})
+	}})
 
 	list := &List{
 		ListTemplate:     template.Must(template.ParseFiles(path.Join(*templateDir, "list.html.tmpl"))),
 		RelationTemplate: template.Must(template.ParseFiles(path.Join(*templateDir, "relation.html.tmpl"))),
 	}
-	fh.Handle("/FH/list.html", http.HandlerFunc(list.List))
-	fh.Handle("/FH/calc.html", http.HandlerFunc(list.Calculator))
+	http.Handle("/FH/list.html", httpbuffer.Handler{http.HandlerFunc(list.List)})
+	http.Handle("/FH/calc.html", httpbuffer.Handler{http.HandlerFunc(list.Calculator)})
 	tree := &Tree{
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 	}
 
-	fh.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
-	http.Handle("/FH/", httpbuffer.Handler{fh})
+	http.Handle("/FH/tree.html", httpbuffer.Handler{http.HandlerFunc(tree.HTML)})
 	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{http.HandlerFunc(rpcPostHandler)}})
 	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir)))
 
