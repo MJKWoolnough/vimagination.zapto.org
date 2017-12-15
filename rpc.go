@@ -1,12 +1,50 @@
 package main
 
 import (
+	"io"
+	"net/http"
 	"net/rpc/jsonrpc"
 
 	"golang.org/x/net/websocket"
 )
 
-func rpcHandler(conn *websocket.Conn) {
+type rpcSwitch struct {
+	Websocket, Post http.Handler
+}
+
+func (rpc *rpcSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		rpc.Post.ServeHTTP(w, r)
+		return
+	}
+	rpc.Websocket.ServeHTTP(w, r)
+}
+
+type postRWC struct {
+	io.Reader
+	io.Closer
+	io.Writer
+	Written bool
+}
+
+func (p *postRWC) Write(b []byte) (int, error) {
+	p.Written = true
+	return p.Writer.Write(b)
+}
+
+func rpcPostHandler(w http.ResponseWriter, r *http.Request) {
+	data := postRWC{
+		Reader: io.LimitReader(r.Body, 1<<12),
+		Closer: r.Body,
+		Writer: w,
+	}
+	jsonrpc.ServeConn(&data)
+	if !data.Written {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
+func rpcWebsocketHandler(conn *websocket.Conn) {
 	jsonrpc.ServeConn(conn)
 }
 

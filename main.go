@@ -98,7 +98,7 @@ func main() {
 
 	fh.Handle("/FH/tree.html", http.HandlerFunc(tree.HTML))
 	http.Handle("/FH/", httpbuffer.Handler{fh})
-	http.Handle("/FH/rpc", websocket.Handler(rpcHandler))
+	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{http.HandlerFunc(rpcPostHandler)}})
 	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir)))
 
 	var (
