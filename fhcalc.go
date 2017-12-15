@@ -76,6 +76,6 @@ func (l *List) Calculator(w http.ResponseWriter, r *http.Request) {
 		First:  first,
 		Second: second,
 	}
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	l.RelationTemplate.Execute(w, ctv)
 }

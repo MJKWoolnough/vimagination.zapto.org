@@ -65,7 +65,7 @@ func (IndexTemplateVars) Letters() [26]string {
 }
 
 func (l *List) serveList(w http.ResponseWriter, r *http.Request, calc bool, first uint) {
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	const perPage = 20
 	var iv IndexVars
 	form.Parse(&iv, r.Form)
