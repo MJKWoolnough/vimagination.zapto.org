@@ -3,7 +3,9 @@ package main
 import (
 	"io"
 	"net/http"
+	"net/rpc"
 	"net/rpc/jsonrpc"
+	"sync"
 
 	"golang.org/x/net/websocket"
 )
@@ -32,13 +34,33 @@ func (p *postRWC) Write(b []byte) (int, error) {
 	return p.Writer.Write(b)
 }
 
+type cw struct {
+	rpc.ServerCodec
+	wg sync.WaitGroup
+}
+
+func (cw *cw) ReadRequestHeader(r *rpc.Request) error {
+	cw.wg.Add(1)
+	return cw.ServerCodec.ReadRequestHeader(r)
+}
+
+func (cw *cw) WriteResponse(r *rpc.Response, i interface{}) error {
+	cw.wg.Done()
+	return cw.ServerCodec.WriteResponse(r, i)
+}
+
+func (cw *cw) Close() error {
+	cw.wg.Wait()
+	return cw.ServerCodec.Close()
+}
+
 func rpcPostHandler(w http.ResponseWriter, r *http.Request) {
 	data := postRWC{
 		Reader: io.LimitReader(r.Body, 1<<12),
 		Closer: r.Body,
 		Writer: w,
 	}
-	jsonrpc.ServeConn(&data)
+	rpc.ServeCodec(&cw{ServerCodec: jsonrpc.NewServerCodec(conn)})
 	if !data.Written {
 		w.WriteHeader(http.StatusBadRequest)
 	}
