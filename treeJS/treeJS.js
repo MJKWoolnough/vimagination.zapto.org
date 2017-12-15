@@ -1,22 +1,30 @@
 "use strict";
 window.addEventListener("load", function() {
 	var rpc = new (function(onload){
-		var ws = new WebSocket("ws://" + window.location.host + "/FH/rpc"),
+		var ws,
+		    xh = new XMLHttpRequest(),
 		    requests = [],
 		    nextID = 0,
-		    request = function (method, params, callback) {
-			    var msg = {
-				    "method": "RPC." + method,
-				    "id": nextID,
-				    "params": [params],
-			    };
-			    requests[nextID] = callback;
-			    ws.send(JSON.stringify(msg));
-			    nextID++;
+		    send = function(data) {
+			if (ws) {
+				ws.send(data);
+			} else {
+				xh.open("POST", "http://", window.location.host + "/FH/rpc");
+				xh.send(data);
+			}
 		    },
-		    closed = false;
-		ws.onmessage = function (event) {
-			var data = JSON.parse(event.data),
+		    request = function (method, params, callback) {
+			var msg = {
+				"method": "RPC." + method,
+				"id": nextID,
+				"params": [params],
+			};
+			requests[nextID] = callback;
+			send(JSON.stringify(msg));
+			nextID++;
+		    },
+		    response = function(json) {
+			var data = JSON.parse(json),
 			req = requests[data.id];
 			delete requests[data.id];
 			if (typeof req === "undefined") {
@@ -26,21 +34,33 @@ window.addEventListener("load", function() {
 				return;
 			}
 			req(data.result);
-		};
-		ws.onopen = onload;
-		ws.onerror = function(event) {
-			document.body.setInnerText("An error occurred");
-		}
-		ws.onclose = function(event) {
-			if (closed === true) {
-				return;
+		    }
+		    closed = false;
+		xh.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				response(this.responseText);
 			}
-			switch(event.code) {
-			case 1006:
-				document.body.setInnerText("The server unexpectedly closed the connection - this may be an error.");
-				break;
-			default:
-				document.body.setInnerText("Lost Connection To Server! Code: " + event.code);
+		}
+		if (window.Websocket) {
+			ws = new WebSocket("ws://" + window.location.host + "/FH/rpc"),
+			ws.onmessage = function (event) {
+				response(event.data);
+			};
+			ws.onopen = onload;
+			ws.onerror = function(event) {
+				document.body.setInnerText("An error occurred");
+			}
+			ws.onclose = function(event) {
+				if (closed === true) {
+					return;
+				}
+				switch(event.code) {
+				case 1006:
+					document.body.setInnerText("The server unexpectedly closed the connection - this may be an error.");
+					break;
+				default:
+					document.body.setInnerText("Lost Connection To Server! Code: " + event.code);
+				}
 			}
 		}
 		window.addEventListener("beforeunload", function() {
