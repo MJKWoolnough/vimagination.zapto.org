@@ -206,20 +206,19 @@ window.addEventListener("load", function() {
 		this.expandPerson = function(id, callback) {
 			loadPerson(id, function(person) {
 				var wg = new waitGroup(callback),
-				    wgDone = wg.done.bind(wg),
 				    familyLoader = function(family) {
 					if (family.Husband != 0) {
 						wg.add(1);
-						loadPerson(family.Husband, wgDone);
+						loadPerson(family.Husband, wg.done);
 					}
 					if (family.Wife != 0) {
 						wg.add(1);
-						loadPerson(family.Wife, wgDone);
+						loadPerson(family.Wife, wg.done);
 					}
 					if (family.Children.length > 0) {
 						wg.add(family.Children.length);
 						for(var i = 0; i < family.Children.length; i++) {
-							loadPerson(family.Children[i], wgDone);
+							loadPerson(family.Children[i], wg.done);
 						}
 					}
 					wg.done();
@@ -615,11 +614,10 @@ window.addEventListener("load", function() {
 						cache.getPerson(highlight[i]).Expand = true;
 					}
 					drawAndMove();
-				}),
-				    wgDone = wg.done.bind(wg);
+				});
 				wg.add(highlight.length + 1);
 				for (var i = 0; i < highlight.length; i++) {
-					cache.expandPerson(highlight[i], wgDone);
+					cache.expandPerson(highlight[i], wg.done);
 				}
 				wg.done();
 			} else {
