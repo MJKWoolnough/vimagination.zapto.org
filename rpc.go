@@ -40,13 +40,17 @@ type cw struct {
 }
 
 func (cw *cw) ReadRequestHeader(r *rpc.Request) error {
-	cw.wg.Add(1)
-	return cw.ServerCodec.ReadRequestHeader(r)
+	err := cw.ServerCodec.ReadRequestHeader(r)
+	if err == nil {
+		cw.wg.Add(1)
+	}
+	return err
 }
 
 func (cw *cw) WriteResponse(r *rpc.Response, i interface{}) error {
+	err := cw.ServerCodec.WriteResponse(r, i)
 	cw.wg.Done()
-	return cw.ServerCodec.WriteResponse(r, i)
+	return err
 }
 
 func (cw *cw) Close() error {
