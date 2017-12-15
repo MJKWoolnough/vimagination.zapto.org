@@ -60,7 +60,7 @@ func rpcPostHandler(w http.ResponseWriter, r *http.Request) {
 		Closer: r.Body,
 		Writer: w,
 	}
-	rpc.ServeCodec(&cw{ServerCodec: jsonrpc.NewServerCodec(conn)})
+	rpc.ServeCodec(&cw{ServerCodec: jsonrpc.NewServerCodec(&data)})
 	if !data.Written {
 		w.WriteHeader(http.StatusBadRequest)
 	}
