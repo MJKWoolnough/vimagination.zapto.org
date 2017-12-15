@@ -57,6 +57,7 @@ func (p personHelpers) ChildPos(spouse int, child int) uint {
 }
 
 func (t *Tree) HTML(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	var tv TreeVars
 	r.ParseForm()
 	form.Parse(&tv, r.Form)
