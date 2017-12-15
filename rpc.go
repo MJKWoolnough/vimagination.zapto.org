@@ -59,6 +59,7 @@ func (cw *cw) Close() error {
 }
 
 func rpcPostHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	data := postRWC{
 		Reader: io.LimitReader(r.Body, 1<<12),
 		Closer: r.Body,
