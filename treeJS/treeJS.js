@@ -2,13 +2,14 @@
 window.addEventListener("load", function() {
 	var rpc = new (function(onload){
 		var ws,
-		    xh = new XMLHttpRequest(),
 		    requests = [],
 		    nextID = 0,
 		    send = function(data) {
 			if (ws) {
 				ws.send(data);
 			} else {
+				var xh = new XMLHttpRequest();
+				xh.onreadystatechange = xhonreadystatechange;
 				xh.open("POST", "http://" + window.location.host + "/FH/rpc");
 				xh.send(data);
 			}
@@ -19,9 +20,8 @@ window.addEventListener("load", function() {
 				"id": nextID,
 				"params": [params],
 			};
-			requests[nextID] = callback;
+			requests[nextID++] = callback;
 			send(JSON.stringify(msg));
-			nextID++;
 		    },
 		    response = function(json) {
 			var data = JSON.parse(json),
@@ -35,12 +35,12 @@ window.addEventListener("load", function() {
 			}
 			req(data.result);
 		    },
-		    closed = false;
-		xh.onreadystatechange = function() {
+		    closed = false,
+		    xhonreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
 				response(this.responseText);
 			}
-		}
+		    };
 		if (window.WebSocket) {
 			ws = new WebSocket("ws://" + window.location.host + "/FH/rpc"),
 			ws.onmessage = function (event) {
