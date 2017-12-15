@@ -9,7 +9,7 @@ window.addEventListener("load", function() {
 			if (ws) {
 				ws.send(data);
 			} else {
-				xh.open("POST", "http://", window.location.host + "/FH/rpc");
+				xh.open("POST", "http://" + window.location.host + "/FH/rpc");
 				xh.send(data);
 			}
 		    },
@@ -34,14 +34,14 @@ window.addEventListener("load", function() {
 				return;
 			}
 			req(data.result);
-		    }
+		    },
 		    closed = false;
 		xh.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
 				response(this.responseText);
 			}
 		}
-		if (window.Websocket) {
+		if (window.WebSocket) {
 			ws = new WebSocket("ws://" + window.location.host + "/FH/rpc"),
 			ws.onmessage = function (event) {
 				response(event.data);
@@ -62,10 +62,14 @@ window.addEventListener("load", function() {
 					document.body.setInnerText("Lost Connection To Server! Code: " + event.code);
 				}
 			}
+		} else {
+			window.setTimeout(onload, 1);
 		}
 		window.addEventListener("beforeunload", function() {
 			closed = true;
-			ws.close();
+			if (ws) {
+				ws.close();
+			}
 		});
 		this.getPerson = request.bind(this, "GetPerson");
 		this.getFamily = request.bind(this, "GetFamily");
