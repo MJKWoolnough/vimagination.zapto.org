@@ -24,12 +24,13 @@ import (
 )
 
 var (
-	gedcomFile  = flag.String("g", "./tree.ged", "GEDCOM file")
-	templateDir = flag.String("t", "./templates", "template directory")
-	filesDir    = flag.String("f", "./files", "files directory")
-	logFile     = flag.String("l", "", "file for request logging")
-	logName     = flag.String("n", "", "name for logging")
-	logger      *log.Logger
+	gedcomFile    = flag.String("g", "./tree.ged", "GEDCOM file")
+	templateDir   = flag.String("t", "./templates", "template directory")
+	filesDir      = flag.String("f", "./files", "files directory")
+	compressedDir = flag.String("c", "./compressedfiles", "compressed files directory")
+	logFile       = flag.String("l", "", "file for request logging")
+	logName       = flag.String("n", "", "name for logging")
+	logger        *log.Logger
 )
 
 var templateFuncs = template.FuncMap{
@@ -95,9 +96,14 @@ func main() {
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 	}
 
+	var compressed []http.FileSystem
+	if *compressedDir != "" {
+		compressed = []http.FileSystem{http.Dir(*compressedDir)}
+	}
+
 	http.Handle("/FH/tree.html", httpbuffer.Handler{http.HandlerFunc(tree.HTML)})
 	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{http.HandlerFunc(rpcPostHandler)}})
-	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir)))
+	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir), compressed...))
 
 	var (
 		lFile  *os.File
