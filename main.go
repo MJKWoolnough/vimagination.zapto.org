@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/rpc"
+	"net/rpc/jsonrpc"
 	"net/smtp"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ import (
 	_ "github.com/MJKWoolnough/httpbuffer/gzip"
 	"github.com/MJKWoolnough/httpgzip"
 	"github.com/MJKWoolnough/httplog"
+	"github.com/MJKWoolnough/httprpc"
 	"github.com/MJKWoolnough/webserver/contact"
 	"github.com/MJKWoolnough/webserver/proxy/client"
 )
@@ -102,7 +104,7 @@ func main() {
 	}
 
 	http.Handle("/FH/tree.html", httpbuffer.Handler{http.HandlerFunc(tree.HTML)})
-	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{http.HandlerFunc(rpcPostHandler)}})
+	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{httprpc.Handle(nil, jsonrpc.NewServerCodec, 1<<12, "application/json; charset=utf-8")}})
 	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir), compressed...))
 
 	var (

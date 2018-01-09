@@ -1,11 +1,8 @@
 package main
 
 import (
-	"io"
 	"net/http"
-	"net/rpc"
 	"net/rpc/jsonrpc"
-	"sync"
 
 	"golang.org/x/net/websocket"
 )
@@ -20,55 +17,6 @@ func (rpc *rpcSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rpc.Websocket.ServeHTTP(w, r)
-}
-
-type postRWC struct {
-	io.Reader
-	io.Closer
-	io.Writer
-	Written bool
-}
-
-func (p *postRWC) Write(b []byte) (int, error) {
-	p.Written = true
-	return p.Writer.Write(b)
-}
-
-type cw struct {
-	rpc.ServerCodec
-	wg sync.WaitGroup
-}
-
-func (cw *cw) ReadRequestHeader(r *rpc.Request) error {
-	err := cw.ServerCodec.ReadRequestHeader(r)
-	if err == nil {
-		cw.wg.Add(1)
-	}
-	return err
-}
-
-func (cw *cw) WriteResponse(r *rpc.Response, i interface{}) error {
-	err := cw.ServerCodec.WriteResponse(r, i)
-	cw.wg.Done()
-	return err
-}
-
-func (cw *cw) Close() error {
-	cw.wg.Wait()
-	return cw.ServerCodec.Close()
-}
-
-func rpcPostHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	data := postRWC{
-		Reader: io.LimitReader(r.Body, 1<<12),
-		Closer: r.Body,
-		Writer: w,
-	}
-	rpc.ServeCodec(&cw{ServerCodec: jsonrpc.NewServerCodec(&data)})
-	if !data.Written {
-		w.WriteHeader(http.StatusBadRequest)
-	}
 }
 
 func rpcWebsocketHandler(conn *websocket.Conn) {
