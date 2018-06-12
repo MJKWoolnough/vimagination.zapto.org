@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/MJKWoolnough/form"
+	"vimagination.zapto.org/form"
 )
 
 type CalcVars struct {

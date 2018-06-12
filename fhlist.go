@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/MJKWoolnough/form"
-	"github.com/MJKWoolnough/pagination"
+	"vimagination.zapto.org/form"
+	"vimagination.zapto.org/pagination"
 )
 
 type Letter struct {

@@ -5,8 +5,8 @@ import (
 
 	"honnef.co/go/js/dom"
 
-	"github.com/MJKWoolnough/gopherjs/xdom"
-	"github.com/MJKWoolnough/gopherjs/xjs"
+	"vimagination.zapto.org/gopherjs/xdom"
+	"vimagination.zapto.org/gopherjs/xjs"
 	"github.com/gopherjs/gopherjs/js"
 )
 

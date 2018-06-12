@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/MJKWoolnough/gedcom"
+	"vimagination.zapto.org/gedcom"
 )
 
 type Family struct {

@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/MJKWoolnough/form"
+	"vimagination.zapto.org/form"
 )
 
 type Tree struct {

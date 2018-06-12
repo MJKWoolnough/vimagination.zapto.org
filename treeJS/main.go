@@ -1,13 +1,13 @@
-package main
+package main // import "vimagination.zapto.org/vimagination.zapto.org/treeJS"
 
 import (
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/MJKWoolnough/gopherjs/xjs"
 	"github.com/gopherjs/gopherjs/js"
 	"honnef.co/go/js/dom"
+	"vimagination.zapto.org/gopherjs/xjs"
 )
 
 var (

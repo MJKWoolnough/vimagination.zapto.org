@@ -1,4 +1,4 @@
-package main
+package main // import "vimagination.zapto.org/vimagination.zapto.org"
 
 import (
 	"flag"
@@ -15,14 +15,14 @@ import (
 
 	"golang.org/x/net/websocket"
 
-	"github.com/MJKWoolnough/httpbuffer"
-	_ "github.com/MJKWoolnough/httpbuffer/deflate"
-	_ "github.com/MJKWoolnough/httpbuffer/gzip"
-	"github.com/MJKWoolnough/httpgzip"
-	"github.com/MJKWoolnough/httplog"
-	"github.com/MJKWoolnough/httprpc"
-	"github.com/MJKWoolnough/webserver/contact"
-	"github.com/MJKWoolnough/webserver/proxy/client"
+	"vimagination.zapto.org/httpbuffer"
+	_ "vimagination.zapto.org/httpbuffer/deflate"
+	_ "vimagination.zapto.org/httpbuffer/gzip"
+	"vimagination.zapto.org/httpgzip"
+	"vimagination.zapto.org/httplog"
+	"vimagination.zapto.org/httprpc"
+	"vimagination.zapto.org/webserver/contact"
+	"vimagination.zapto.org/webserver/proxy/client"
 )
 
 var (

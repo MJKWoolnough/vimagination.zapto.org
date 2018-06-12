@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/MJKWoolnough/gopherjs/rpc"
+	"vimagination.zapto.org/gopherjs/rpc"
 
 	"honnef.co/go/js/dom"
 
