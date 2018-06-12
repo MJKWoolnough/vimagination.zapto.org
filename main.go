@@ -1,6 +1,7 @@
 package main // import "vimagination.zapto.org/vimagination.zapto.org"
 
 import (
+	"crypto/tls"
 	"flag"
 	"html/template"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"strings"
 
+	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/websocket"
 
 	"vimagination.zapto.org/httpbuffer"
@@ -43,6 +45,22 @@ var templateFuncs = template.FuncMap{
 	"uint": func(i int) uint { return uint(i) },
 	"int":  func(i uint) int { return int(i) },
 	"gtr":  func(i, j uint) bool { return j > i },
+}
+
+type http2https struct {
+	http.Handler
+}
+
+func (hh http2https) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.TLS == nil {
+		var url = "https://" + r.Host + r.URL.Path
+		if len(r.URL.RawQuery) != 0 {
+			url += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, url, http.StatusMovedPermanently)
+		return
+	}
+	hh.Handler.ServeHTTP(w, r)
 }
 
 func main() {
@@ -108,9 +126,18 @@ func main() {
 	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir), compressed...))
 
 	var (
-		lFile  *os.File
+		lFile     *os.File
+		leManager = &autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			Cache:      autocert.DirCache("./certcache/"),
+			HostPolicy: autocert.HostWhitelist("vimagination.zapto.org"),
+		}
 		server = &http.Server{
-			Handler:  http.DefaultServeMux,
+			Handler: leManager.HTTPHandler(http2https{http.DefaultServeMux}),
+			TLSConfig: &tls.Config{
+				GetCertificate: leManager.GetCertificate,
+				NextProtos:     []string{"h2", "http/1.1"},
+			},
 			ErrorLog: logger,
 		}
 	)
