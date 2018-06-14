@@ -156,7 +156,7 @@ func main() {
 			if err != nil {
 				logger.Fatalf("error starting request logging: %s\n", err)
 			}
-			server.Handler = httplog.Wrap(http.DefaultServeMux, lr)
+			server.Handler = httplog.Wrap(server.Handler, lr)
 		}
 
 	}
