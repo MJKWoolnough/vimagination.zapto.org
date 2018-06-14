@@ -116,14 +116,19 @@ func main() {
 		HTMLTemplate: template.Must(template.New("tree.html.tmpl").Funcs(templateFuncs).ParseFiles(path.Join(*templateDir, "tree.html.tmpl"))),
 	}
 
-	var compressed []http.FileSystem
+	otherFS := []http.FileSystem{
+		http.Dir("/home/git/repos/"),
+		http.Dir("/home/git/repoz/"),
+	}
 	if *compressedDir != "" {
-		compressed = []http.FileSystem{http.Dir(*compressedDir)}
+		otherFS = append(otherFS, http.Dir(*compressedDir))
 	}
 
 	http.Handle("/FH/tree.html", httpbuffer.Handler{http.HandlerFunc(tree.HTML)})
 	http.Handle("/FH/rpc", &rpcSwitch{websocket.Handler(rpcWebsocketHandler), httpbuffer.Handler{httprpc.Handle(nil, jsonrpc.NewServerCodec, 1<<12, "application/json; charset=utf-8")}})
-	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir), compressed...))
+	http.Handle("/rpg/wiki/wiki.js", http.FileServer(http.Dir("./files/")))
+	http.Handle("/rpg/wiki/", wiki("./files/rpg/wiki/"))
+	http.Handle("/", httpgzip.FileServer(http.Dir(*filesDir), otherFS...))
 
 	var (
 		lFile     *os.File
