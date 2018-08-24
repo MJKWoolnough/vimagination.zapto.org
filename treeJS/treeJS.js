@@ -10,7 +10,7 @@ window.addEventListener("load", function() {
 			} else {
 				var xh = new XMLHttpRequest();
 				xh.onreadystatechange = xhonreadystatechange;
-				xh.open("POST", "http://" + window.location.host + "/FH/rpc");
+				xh.open("POST", window.location.protocol + "//" + window.location.host + "/FH/rpc");
 				xh.send(data);
 			}
 		    },
@@ -42,7 +42,8 @@ window.addEventListener("load", function() {
 			}
 		    };
 		if (window.WebSocket) {
-			ws = new WebSocket("ws://" + window.location.host + "/FH/rpc"),
+			var protocol = (window.location.protocol == "https:" ? "wss:" : "ws:");
+			ws = new WebSocket(protocol + "//" + window.location.host + "/FH/rpc"),
 			ws.onmessage = function (event) {
 				response(event.data);
 			};
