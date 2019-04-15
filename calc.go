@@ -103,9 +103,9 @@ func (l Links) Relationship() string {
 		case 1:
 			greats := up - 2
 			if greats > 3 {
-				relationship += strconv.Itoa(greats) + " x Great-Grand-"
+				relationship += strconv.Itoa(greats) + " x Great-"
 			} else {
-				relationship += strings.Repeat("Great-", greats) + "Grand-"
+				relationship += strings.Repeat("Great-", greats)
 			}
 			switch l.First[0].Gender {
 			case 'M':
